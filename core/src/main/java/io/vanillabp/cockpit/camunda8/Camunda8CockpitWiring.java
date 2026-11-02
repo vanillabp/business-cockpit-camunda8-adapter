@@ -44,6 +44,8 @@ public class Camunda8CockpitWiring implements ExtensionWiringService<BpmnModelIn
 
   private final Supplier<BusinessCockpitEventPublisher> publisher;
 
+  private final Camunda8SuspensionCheck suspensionCheck;
+
   /**
    * Creates the step this extension adds to the deployment of a workflow module.
    *
@@ -53,19 +55,23 @@ public class Camunda8CockpitWiring implements ExtensionWiringService<BpmnModelIn
    * @param workflowTaskWiring VanillaBP's registry of what the application declared, which is
    *          what names the workflow aggregate's id variable
    * @param publisher The extension, which is told the user tasks of every wired model
+   * @param suspensionCheck What asks the cluster about suspended workflows, told which modules
+   *          run
    */
   public Camunda8CockpitWiring(
       final Camunda8Clients clients,
       final Camunda8CockpitDeployments deployments,
       final Camunda8CockpitWorkers workers,
       final WorkflowTaskWiring workflowTaskWiring,
-      final Supplier<BusinessCockpitEventPublisher> publisher) {
+      final Supplier<BusinessCockpitEventPublisher> publisher,
+      final Camunda8SuspensionCheck suspensionCheck) {
 
     this.clients = clients;
     this.deployments = deployments;
     this.workers = workers;
     this.workflowTaskWiring = workflowTaskWiring;
     this.publisher = publisher;
+    this.suspensionCheck = suspensionCheck;
 
   }
 
@@ -271,6 +277,8 @@ public class Camunda8CockpitWiring implements ExtensionWiringService<BpmnModelIn
         .open(
             bpmsProcessingContext.getAdapterId(), workflowModuleId,
             bpmsProcessingContext.getMultiInstanceRegistry());
+    // a cluster tells nobody that a workflow was suspended, so it is asked
+    suspensionCheck.moduleStarted(bpmsProcessingContext.getAdapterId(), workflowModuleId);
 
   }
 
@@ -279,6 +287,7 @@ public class Camunda8CockpitWiring implements ExtensionWiringService<BpmnModelIn
       final String workflowModuleId,
       final Camunda8ProcessingContext bpmsProcessingContext) {
 
+    suspensionCheck.moduleStopped(bpmsProcessingContext.getAdapterId(), workflowModuleId);
     workers.close(bpmsProcessingContext.getAdapterId(), workflowModuleId);
 
   }

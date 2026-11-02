@@ -241,6 +241,31 @@ public class Camunda8CockpitDeployments {
   }
 
   /**
+   * The variable which carries the workflow aggregate's id, for every process this extension
+   * wired for one workflow module.
+   * <p>
+   * A report which comes from a search and not from a listener job has no job to read the
+   * aggregate's id from. It asks the storage for this variable instead.
+   *
+   * @param adapterId The configured adapter id whose models were wired
+   * @param workflowModuleId The workflow module
+   * @return The name of the variable by the process id the cluster knows. Empty where the module
+   *         was not wired for that adapter id
+   */
+  public Map<String, String> aggregateIdNamesByScopedIdOf(
+      final String adapterId,
+      final String workflowModuleId) {
+
+    final var byScopedId = new LinkedHashMap<String, String>();
+    of(adapterId, workflowModuleId)
+        .forEach(
+            listener -> byScopedId
+                .putIfAbsent(listener.scopedBpmnProcessId(), listener.aggregateIdName()));
+    return byScopedId;
+
+  }
+
+  /**
    * The BPMN name of one process, as this extension read it out of the model while wiring it.
    * <p>
    * A report about a workflow the cluster's searchable storage has not written yet takes its

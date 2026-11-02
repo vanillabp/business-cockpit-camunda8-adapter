@@ -97,15 +97,73 @@ What the extension writes into a model, what its workers do with the jobs that p
 reads back is documented for users in the
 [wiki](https://github.com/vanillabp/businesscockpit-camunda8-adapter/wiki).
 
-The extension has no configuration key of its own. Where it needs a setting, it reads the one of the
+The extension reads one configuration key of its own,
+`vanillabp.adapters.<id>.cockpit.suspension-check-interval`, see
+[A suspended workflow](#a-suspended-workflow). Everything else it needs comes from a key of the
 Camunda 8 adapter: the lock of its workers is the adapter's `job-timeout`, and line 8.8 waits for
-the cluster as long as the adapter's `workflow-visibility-timeout` says. So the Spring Boot jar
-ships no configuration metadata, the file an IDE reads to offer the keys in `application.yaml`. The
-Camunda 8 adapter's Spring Boot jar describes those keys, and the keys below `vanillabp.cockpit`
-belong to the cockpit's `extensions-commons`, and its Spring Boot jar describes them. When this
-extension reads a key of its own one day, it gets the configuration processor, a hand-written
-`additional-spring-configuration-metadata.json` and an `EveryKeyIsKnownToTheIdeTest`, the way
-`extensions-commons` has them.
+the cluster as long as the adapter's `workflow-visibility-timeout` says. The Camunda 8 adapter's
+Spring Boot jar describes those keys, and the keys below `vanillabp.cockpit` belong to the
+cockpit's `extensions-commons`, and its Spring Boot jar describes them.
+
+The one key of its own stands at the adapter id, because the check runs once per cluster. It
+cannot stand below `vanillabp.cockpit`: `extensions-commons` reads that section and refuses a key
+it does not know there. Both platform modules bind the key as text, and the core reads it, so a
+wrong value gets the same message on both. A `cockpit` section at an adapter id of another type
+ends the start, because nobody would read it. The Spring Boot jar ships no configuration metadata
+for the key. The metadata format has no way to describe a key below a map entry such as an adapter
+id, so an IDE does not offer it. The wiki page about configuration describes it.
+
+## A suspended workflow
+
+A cluster of the 8.10 line can suspend a process instance, over REST and in Operate. While it is
+suspended, nobody can complete one of its tasks. The cluster tells no client about a suspension or
+a resumption: no listener runs, and no job is created. The search shows it. The instance gets the
+state `SUSPENDED` and a `suspendedDate`, and both go away on the resumption. So the cockpit can
+only show a suspension if this extension asks, and `Camunda8SuspensionCheck` does that:
+
+1. Once an hour, one search per adapter id and tenant: every suspended instance of the processes
+   this extension wired, page by page.
+2. The result is compared with the set of the run before. A new instance was suspended, and its
+   `suspendedDate` is the moment reported. Every node therefore reports the same moment.
+3. An instance which left the set was resumed or has ended. One search by all their keys says
+   which. An ended instance gets no report, and the cockpit keeps the mark on an entry which ended
+   while it was suspended.
+4. Only where something changed, three more searches follow, each for all changed instances at
+   once: their open user tasks, the variable with the workflow aggregate's id, and the audit log.
+
+A run without a change costs one request per adapter id and tenant, plus one per thousand
+suspended instances. With changes it costs at most four more, plus one per thousand changed
+instances each. The numbers measured against `camunda/camunda:8.10.7` are in
+decision 36 in the repository's DECISIONS.md.
+
+The interval is `vanillabp.adapters.<id>.cockpit.suspension-check-interval`, one hour by default,
+written as ISO-8601 (`PT30M`) or with a unit (`30m`). `0` switches the check off. The start says
+in one line how often each cluster is asked.
+
+Only the instance which is suspended itself is reported. A process instance started by a call
+activity is not suspended with its caller, and its tasks can still be worked on. A suspended
+instance which is a case of its own is reported as a suspended workflow too. A suspended step of
+another case is not, because that case still runs.
+
+Who suspended or resumed the instance comes from the cluster's audit log. It is the `actorId` of
+the youngest successful `SUSPEND` or `RESUME` entry, and it goes out as the initiator of the
+report, which the cockpit shows as `suspendedBy`. The audit log is on by default, but it has
+entries only for authenticated requests. A cluster with an unprotected API writes none. Without an
+entry nobody is named, and an activation carries the time of the run instead of the moment of the
+resumption.
+
+The set of the run before lives in memory. The first run after a start reports every suspended
+instance again, which the cockpit takes as a repetition. It also reads the audit log of the last
+day for resumptions, so a resumption during a restart is not lost where the cluster has an audit
+log. Every node of the application runs the check. The cockpit takes a second report of the same
+suspension as a repetition and keeps the first moment.
+
+A suspension is not reported at the moment somebody tries to complete a task of a suspended
+instance. The Camunda 8 adapter recognises that refusal and throws
+`io.vanillabp.spi.process.WorkflowSuspendedException` to the application which made the call.
+Nothing tells an extension about it. So the cockpit shows a suspension at most one interval late.
+Lines 8.8 and 8.9 ask nothing: their clusters cannot suspend, and `Camunda8SuspendedInstances` is
+the class per line. See gap 6 in [GAPS.md](./GAPS.md).
 
 ## Release lines
 
@@ -257,11 +315,13 @@ Code that cannot be shared goes into a per-line source directory added by `build
 that cannot compile against every supported client, and code that uses something only a newer
 cluster has.
 
-Two of those exist today. `Camunda8CallHierarchy` says which workflow a job belongs to when its
+Three of those exist today. `Camunda8CallHierarchy` says which workflow a job belongs to when its
 process was called by another one. The clients of 8.9 and 8.10 find that in the job, and line 8.8
 asks the cluster for it. `Camunda8UserTaskSearch` searches the user tasks of a case. The 8.10
 client names all processes of the case in one request, and lines 8.8 and 8.9 send one request per
-process. What a report says is the same on every line. What it costs is not. How long line 8.8 waits for the
+process. What a report says is the same on every line. What it costs is not.
+`Camunda8SuspendedInstances` asks an 8.10 cluster about suspended process instances, and the 8.8
+and 8.9 variants ask nothing, because those clusters cannot suspend. How long line 8.8 waits for the
 cluster's answer is the adapter's `vanillabp.adapters.<adapter-id>.workflow-visibility-timeout`, the same key
 the adapter waits out for the same storage. See [decision 7](./DECISIONS.md).
 

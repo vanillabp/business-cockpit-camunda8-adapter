@@ -1306,6 +1306,33 @@ public class Camunda8CockpitIT {
   }
 
   @Test
+  @DisplayName("A suspended workflow is reported as suspended with its task, and as activated once it is resumed")
+  public void aSuspendedWorkflowIsReportedAndItsResumptionToo() {
+
+    assumeTrue(SuspensionOfTheLine.theClusterCanSuspend(), "a cluster of this line cannot suspend an instance");
+    final var aggregate = aStartedWorkflow("Sven");
+    final var userTaskId = userTaskIdOf(aggregate);
+    final var workflowId = workflowIdOf(aggregate);
+    CockpitServer.awaitRequest("/usertask/created", "\"customer\":\"Sven\"");
+
+    try {
+      // nothing of VanillaBP is involved: an operator suspends the instance in Operate, and the
+      // cluster tells nobody. The check asks every two seconds in this test, see application.yaml
+      SuspensionOfTheLine.suspend(client(), Long.parseLong(workflowId));
+      assertNotNull(CockpitServer.awaitAnyRequest("/usertask/%s/suspended".formatted(userTaskId)));
+      assertNotNull(CockpitServer.awaitAnyRequest("/workflow/%s/suspended".formatted(workflowId)));
+
+      SuspensionOfTheLine.resume(client(), Long.parseLong(workflowId));
+      assertNotNull(CockpitServer.awaitAnyRequest("/usertask/%s/activated".formatted(userTaskId)));
+      assertNotNull(CockpitServer.awaitAnyRequest("/workflow/%s/activated".formatted(workflowId)));
+    } finally {
+      // a suspended instance left behind would be reported again by every later check
+      client().newCancelInstanceCommand(Long.parseLong(workflowId)).send().join();
+    }
+
+  }
+
+  @Test
   @DisplayName("Cancelling a workflow which holds a user task reports that task, and the case as far as the line says it")
   public void cancellingTheWorkflowIsReportedAsFarAsCamundaSaysIt() {
 

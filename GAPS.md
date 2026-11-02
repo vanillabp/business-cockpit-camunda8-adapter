@@ -139,3 +139,21 @@ the older run.
 **What would close it** for those lines is nothing this repository can build. The construct is not
 there. The way out is the release line, the same as for gap 1: an application which needs the newer
 answer to win runs the 8.10 build and sets `job-lease` to `use`. See decision 13 in `DECISIONS.md`.
+
+## 6. A suspension says nothing
+
+**The cockpit needs** to hear that somebody suspended a process instance, and that somebody
+resumed it, so that it marks the tasks of that instance as not workable for now.
+
+**Camunda 8 offers** the suspension from 8.10 on, over REST and in Operate. It offers no listener
+and no job for it, on any line. The search shows the state `SUSPENDED` and a `suspendedDate`, and
+the audit log has an entry for an authenticated request. Lines 8.8 and 8.9 cannot suspend at all.
+
+**Where it can be read:** measured against `camunda/camunda:8.10.7` on 2026-11-02, see
+decision 36 in the repository's DECISIONS.md.
+
+**What it costs** a user of line 8.10: the cockpit shows a suspension or a resumption up to one
+interval late, one hour by default. Without an audit log entry it names nobody as `suspendedBy`.
+
+**What would close it** is a listener or a job of the cluster on a suspension and a resumption. Until
+then this adapter asks the cluster, see the section "A suspended workflow" of the README.

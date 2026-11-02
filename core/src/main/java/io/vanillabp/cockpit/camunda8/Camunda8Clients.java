@@ -34,12 +34,27 @@ public class Camunda8Clients {
 
     private final Camunda8BusinessCases businessCases;
 
+    private final Camunda8SuspensionLookups suspensions;
+
     private Cluster(
         final Camunda8Scope scope) {
 
       this.scope = scope;
       this.callHierarchy = new Camunda8CallHierarchy(this);
       this.businessCases = new Camunda8BusinessCases(this);
+      this.suspensions = new Camunda8SuspendedInstances(this);
+
+    }
+
+    /**
+     * What this cluster says about suspended process instances. Only a cluster of the 8.10 line
+     * can suspend one, see {@link Camunda8SuspendedInstances} in the per-line sources.
+     *
+     * @return The questions {@link Camunda8SuspensionCheck} asks this cluster
+     */
+    Camunda8SuspensionLookups suspensions() {
+
+      return suspensions;
 
     }
 
