@@ -1374,3 +1374,4 @@ entry.
 - `README.md`, section "A suspended workflow", and the list "Absent before 8.10"
 - `GAPS.md`, gap 6
 - the wiki, `Home.md` section "When somebody suspends a workflow", and `Configuration.md`
+
