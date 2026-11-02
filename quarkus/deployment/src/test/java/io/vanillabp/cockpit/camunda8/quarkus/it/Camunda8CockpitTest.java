@@ -2,7 +2,9 @@ package io.vanillabp.cockpit.camunda8.quarkus.it;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
@@ -169,7 +171,10 @@ public class Camunda8CockpitTest {
               .addClass(CallingWorkflowService.class)
               .addClass(OwnCaseAggregate.class)
               .addClass(OwnCaseAggregatePersistence.class)
-              .addClass(OwnCaseWorkflowService.class))
+              .addClass(OwnCaseWorkflowService.class)
+              .addClass(SuspensionOfTheLine.class))
+      // the check of suspended workflows asks every two seconds here, rather than once an hour
+      .overrideRuntimeConfigKey("vanillabp.adapters.c8.cockpit.suspension-check-interval", "PT2S")
       .overrideRuntimeConfigKey(
           "vanillabp.cockpit.rest.base-url", CockpitServer.baseUrl())
       // a machine without Docker gets the fallbacks, and nothing ever connects to them. This
@@ -382,6 +387,36 @@ public class Camunda8CockpitTest {
             .map(task -> String.valueOf(task.getUserTaskKey()))
             .orElse(null),
         "the user task of aggregate %s".formatted(aggregate.getId()));
+
+  }
+
+  @Test
+  @DisplayName("A suspended workflow is reported as suspended with its task, and as activated once it is resumed")
+  public void aSuspendedWorkflowIsReportedAndItsResumptionToo() throws Exception {
+
+    assumeTrue(SuspensionOfTheLine.theClusterCanSuspend(), "a cluster of this line cannot suspend an instance");
+    final var aggregate = aStartedWorkflow("Sven");
+    final var userTaskId = userTaskIdOf(aggregate);
+    final var workflowId = client()
+        .newUserTaskGetRequest(Long.parseLong(userTaskId))
+        .send()
+        .join()
+        .getProcessInstanceKey();
+    CockpitServer.awaitRequest("/usertask/created", "\"customer\":\"Sven\"");
+
+    try {
+      // an operator suspends the instance, and the cluster tells nobody
+      SuspensionOfTheLine.suspend(client(), workflowId);
+      assertNotNull(CockpitServer.awaitAnyRequest("/usertask/%s/suspended".formatted(userTaskId)));
+      assertNotNull(CockpitServer.awaitAnyRequest("/workflow/%s/suspended".formatted(workflowId)));
+
+      SuspensionOfTheLine.resume(client(), workflowId);
+      assertNotNull(CockpitServer.awaitAnyRequest("/usertask/%s/activated".formatted(userTaskId)));
+      assertNotNull(CockpitServer.awaitAnyRequest("/workflow/%s/activated".formatted(workflowId)));
+    } finally {
+      // a suspended instance left behind would be reported again by every later check
+      client().newCancelInstanceCommand(workflowId).send().join();
+    }
 
   }
 
