@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Import;
 import io.camunda.zeebe.model.bpmn.BpmnModelInstance;
 import io.vanillabp.camunda8.Camunda8ProcessingContext;
 import io.vanillabp.camunda8.client.Camunda8ClientFactoryRegistry;
+import io.vanillabp.camunda8.deployment.Camunda8DeploymentService;
 import io.vanillabp.camunda8.observability.Camunda8Metrics;
 import io.vanillabp.camunda8.springboot.client.VanillaBpCamunda8Properties;
 import io.vanillabp.cockpit.camunda8.Camunda8Clients;
@@ -17,6 +18,7 @@ import io.vanillabp.cockpit.camunda8.Camunda8CockpitDeployments;
 import io.vanillabp.cockpit.camunda8.Camunda8CockpitSettings;
 import io.vanillabp.cockpit.camunda8.Camunda8CockpitWiring;
 import io.vanillabp.cockpit.camunda8.Camunda8CockpitWorkers;
+import io.vanillabp.cockpit.camunda8.Camunda8SuspensionCheck;
 import io.vanillabp.cockpit.extension.spi.BusinessCockpitEventPublisher;
 import io.vanillabp.integration.adapter.migration.config.MigrationAdapterProperties;
 import io.vanillabp.integration.adapter.spi.NameClashAvoidanceSupport;
@@ -35,7 +37,9 @@ import io.vanillabp.integration.extension.spi.ExtensionWiringService;
  */
 @AutoConfiguration(afterName = "io.vanillabp.integration.processservice.SpringBootMigrationAdapterAutoConfiguration")
 @ConditionalOnBean(MigrationAdapterProperties.class)
-@EnableConfigurationProperties(VanillaBpCamunda8Properties.class)
+@EnableConfigurationProperties({
+    VanillaBpCamunda8Properties.class, Camunda8CockpitOverlayProperties.class
+})
 @Import(Camunda8CockpitBeanRegistrar.class)
 public class Camunda8CockpitAutoConfiguration {
 
@@ -76,16 +80,45 @@ public class Camunda8CockpitAutoConfiguration {
   }
 
   /**
-   * Registers the settings of the listener jobs of this extension.
+   * Registers the settings of this extension. A wrong value of its own key ends the start here.
    *
    * @param properties The Camunda 8 adapter's own configuration
-   * @return How long a listener job of this extension stays locked
+   * @param overlay The key this extension reads itself
+   * @param platform VanillaBP's resolved configuration, which names the configured Camunda 8
+   *          adapters
+   * @return How long a listener job of this extension stays locked, and how often a cluster is
+   *         asked about suspended workflows
    */
   @Bean
   public Camunda8CockpitSettings businessCockpitCamunda8Settings(
-      final VanillaBpCamunda8Properties properties) {
+      final VanillaBpCamunda8Properties properties,
+      final Camunda8CockpitOverlayProperties overlay,
+      final MigrationAdapterProperties platform) {
 
-    return new Camunda8SpringSettings(properties);
+    return new Camunda8SpringSettings(
+        properties, overlay.suspensionCheckIntervals(), platform
+            .adapterIdsOfType(Camunda8DeploymentService.ADAPTER_TYPE));
+
+  }
+
+  /**
+   * Registers what asks the clusters about suspended workflows. Spring closes it with the
+   * context.
+   *
+   * @param clients The clusters
+   * @param deployments What was wired
+   * @param settings How often a cluster is asked
+   * @param publisher Where a suspension is reported, resolved on the first run
+   * @return The check
+   */
+  @Bean
+  public Camunda8SuspensionCheck businessCockpitCamunda8SuspensionCheck(
+      final Camunda8Clients clients,
+      final Camunda8CockpitDeployments deployments,
+      final Camunda8CockpitSettings settings,
+      final ObjectProvider<BusinessCockpitEventPublisher> publisher) {
+
+    return new Camunda8SuspensionCheck(clients, deployments, settings, publisher::getObject);
 
   }
 
@@ -125,6 +158,7 @@ public class Camunda8CockpitAutoConfiguration {
    *          variable of a BPMN process
    * @param publisher The extension, which is told the user tasks of every wired model. It is
    *          resolved when the first model is wired
+   * @param suspensionCheck What asks the clusters about suspended workflows
    * @return This extension's place in VanillaBP's deployment pipeline, taken for a workflow
    *         module which runs on Camunda 8 and for no other
    */
@@ -134,9 +168,11 @@ public class Camunda8CockpitAutoConfiguration {
       final Camunda8CockpitDeployments deployments,
       final Camunda8CockpitWorkers workers,
       final WorkflowTaskWiring workflowTaskWiring,
-      final ObjectProvider<BusinessCockpitEventPublisher> publisher) {
+      final ObjectProvider<BusinessCockpitEventPublisher> publisher,
+      final Camunda8SuspensionCheck suspensionCheck) {
 
-    return new Camunda8CockpitWiring(clients, deployments, workers, workflowTaskWiring, publisher::getObject);
+    return new Camunda8CockpitWiring(
+        clients, deployments, workers, workflowTaskWiring, publisher::getObject, suspensionCheck);
 
   }
 

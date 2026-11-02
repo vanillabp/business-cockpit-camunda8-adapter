@@ -15,6 +15,7 @@ import io.vanillabp.cockpit.camunda8.Camunda8CockpitDeployments;
 import io.vanillabp.cockpit.camunda8.Camunda8CockpitSettings;
 import io.vanillabp.cockpit.camunda8.Camunda8CockpitWiring;
 import io.vanillabp.cockpit.camunda8.Camunda8CockpitWorkers;
+import io.vanillabp.cockpit.camunda8.Camunda8SuspensionCheck;
 import io.vanillabp.cockpit.extension.spi.BusinessCockpitBpmsBridge;
 import io.vanillabp.cockpit.extension.spi.BusinessCockpitEventPublisher;
 import io.vanillabp.integration.adapter.migration.config.MigrationAdapterProperties;
@@ -23,6 +24,7 @@ import io.vanillabp.integration.adapter.spi.workflowtask.WorkflowTaskWiring;
 import io.vanillabp.integration.extension.spi.ExtensionWiringService;
 import io.vanillabp.integration.extension.spi.election.WorkflowElection;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Disposes;
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Singleton;
@@ -79,18 +81,60 @@ public class Camunda8CockpitProducer {
   }
 
   /**
-   * Produces the settings of the listener jobs of this extension.
+   * Produces the settings of this extension. A wrong value of its own key ends the start here.
    *
    * @param properties The Camunda 8 adapter's own configuration
-   * @return How long a listener job of this extension stays locked
+   * @param overlay The key this extension reads itself
+   * @param platform VanillaBP's resolved configuration, which names the configured Camunda 8
+   *          adapters
+   * @return How long a listener job of this extension stays locked, and how often a cluster is
+   *         asked about suspended workflows
    */
   @Produces
   @Singleton
   @Unremovable
   public Camunda8CockpitSettings businessCockpitCamunda8Settings(
-      final VanillaBpCamunda8Properties properties) {
+      final VanillaBpCamunda8Properties properties,
+      final Camunda8CockpitOverlayProperties overlay,
+      final MigrationAdapterProperties platform) {
 
-    return new Camunda8QuarkusSettings(properties);
+    return new Camunda8QuarkusSettings(
+        properties, overlay.suspensionCheckIntervals(), platform
+            .adapterIdsOfType(Camunda8DeploymentService.ADAPTER_TYPE));
+
+  }
+
+  /**
+   * Produces what asks the clusters about suspended workflows.
+   *
+   * @param clients The clusters
+   * @param deployments What was wired
+   * @param settings How often a cluster is asked
+   * @param publisher Where a suspension is reported, resolved on the first run
+   * @return The check
+   */
+  @Produces
+  @Singleton
+  @Unremovable
+  public Camunda8SuspensionCheck businessCockpitCamunda8SuspensionCheck(
+      final Camunda8Clients clients,
+      final Camunda8CockpitDeployments deployments,
+      final Camunda8CockpitSettings settings,
+      final Instance<BusinessCockpitEventPublisher> publisher) {
+
+    return new Camunda8SuspensionCheck(clients, deployments, settings, publisher::get);
+
+  }
+
+  /**
+   * Stops the check with the application.
+   *
+   * @param suspensionCheck The check
+   */
+  public void closeTheSuspensionCheck(
+      @Disposes final Camunda8SuspensionCheck suspensionCheck) {
+
+    suspensionCheck.close();
 
   }
 
@@ -134,6 +178,7 @@ public class Camunda8CockpitProducer {
    *          variable of a BPMN process
    * @param publisher The extension, which is told the user tasks of every wired model. It is
    *          resolved when the first model is wired
+   * @param suspensionCheck What asks the clusters about suspended workflows
    * @return This extension's place in VanillaBP's deployment pipeline, taken for a workflow
    *         module which runs on Camunda 8 and for no other
    */
@@ -145,9 +190,11 @@ public class Camunda8CockpitProducer {
       final Camunda8CockpitDeployments deployments,
       final Camunda8CockpitWorkers workers,
       final WorkflowTaskWiring workflowTaskWiring,
-      final Instance<BusinessCockpitEventPublisher> publisher) {
+      final Instance<BusinessCockpitEventPublisher> publisher,
+      final Camunda8SuspensionCheck suspensionCheck) {
 
-    return new Camunda8CockpitWiring(clients, deployments, workers, workflowTaskWiring, publisher::get);
+    return new Camunda8CockpitWiring(
+        clients, deployments, workers, workflowTaskWiring, publisher::get, suspensionCheck);
 
   }
 

@@ -6,11 +6,17 @@ import java.time.Duration;
  * What the extension has to know about a configured Camunda 8 adapter and cannot read from the
  * cluster.
  * <p>
- * There is one such question, and the platform modules of this repository answer it rather than
- * a key here. The adapter's configuration overlay (<code>vanillabp.adapters.&lt;id&gt;.*</code>)
- * is bound differently on Spring Boot than on Quarkus, and this extension deliberately adds no
- * lock setting of its own. A workflow module which raised the adapter's job timeout raised it
- * for the cockpit's listeners as well.
+ * There are two such questions, and the platform modules of this repository answer them. The
+ * adapter's configuration overlay (<code>vanillabp.adapters.&lt;id&gt;.*</code>) is bound
+ * differently on Spring Boot than on Quarkus.
+ * <p>
+ * The lock of a listener job is the adapter's own <code>job-timeout</code>, and this extension
+ * deliberately adds no lock setting of its own. A workflow module which raised the adapter's job
+ * timeout raised it for the cockpit's listeners as well.
+ * <p>
+ * How often the extension asks a cluster about suspended process instances is the one key of
+ * its own, <code>vanillabp.adapters.&lt;id&gt;.cockpit.suspension-check-interval</code>. See
+ * {@link Camunda8SuspensionCheck}.
  */
 public interface Camunda8CockpitSettings {
 
@@ -25,5 +31,20 @@ public interface Camunda8CockpitSettings {
   Duration listenerJobTimeout(
       String workflowModuleId,
       String adapterId);
+
+  /**
+   * How often the extension asks the cluster of one adapter which process instances are
+   * suspended.
+   *
+   * @param adapterId The configured adapter id
+   * @return The interval, {@link Duration#ZERO} where the check is switched off. The default is
+   *         {@link Camunda8SuspensionCheckInterval#DEFAULT}
+   */
+  default Duration suspensionCheckInterval(
+      final String adapterId) {
+
+    return Camunda8SuspensionCheckInterval.DEFAULT;
+
+  }
 
 }

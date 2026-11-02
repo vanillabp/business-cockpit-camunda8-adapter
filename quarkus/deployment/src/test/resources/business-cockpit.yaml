@@ -13,6 +13,8 @@ vanillabp:
       job-lease: use
       name-clash-avoidance: use-prefix
       job-timeout: PT30S
+      cockpit:
+        suspension-check-interval: PT1H
   prioritized-adapters:
     - c8
   cockpit:

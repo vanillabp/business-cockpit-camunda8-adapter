@@ -18,6 +18,8 @@ vanillabp:
       stream-timeout: PT10S
       poll-interval: PT0.1S
       request-timeout: PT20S
+      cockpit:
+        suspension-check-interval: PT2S
   prioritized-adapters:
     - c8
   cockpit:
