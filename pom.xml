@@ -30,7 +30,8 @@
   <modules>
     <module>core</module>
     <module>spring-boot</module>
-    <module>quarkus</module>
+    <module>quarkus/runtime</module>
+    <module>quarkus/deployment</module>
     <!-- last: it judges the reports the modules above produced -->
     <module>test-coverage-report</module>
   </modules>
