@@ -4,8 +4,9 @@
 
   <parent>
     <groupId>io.vanillabp.businesscockpit</groupId>
-    <artifactId>businesscockpit-camunda8-adapter-quarkus-parent</artifactId>
+    <artifactId>businesscockpit-camunda8-adapter-parent</artifactId>
     <version>${revision}</version>
+    <relativePath>../../pom.xml</relativePath>
   </parent>
 
   <artifactId>businesscockpit-camunda8-adapter-quarkus-deployment</artifactId>
