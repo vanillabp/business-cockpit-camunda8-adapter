@@ -150,7 +150,7 @@ and no job for it, on any line. The search shows the state `SUSPENDED` and a `su
 the audit log has an entry for an authenticated request. Lines 8.8 and 8.9 cannot suspend at all.
 
 **Where it can be read:** measured against `camunda/camunda:8.10.7` on 2026-11-02, see
-`DECISIONS.pending/1544.md`.
+decision 36 in the repository's DECISIONS.md.
 
 **What it costs** a user of line 8.10: the cockpit shows a suspension or a resumption up to one
 interval late, one hour by default. Without an audit log entry it names nobody as `suspendedBy`.

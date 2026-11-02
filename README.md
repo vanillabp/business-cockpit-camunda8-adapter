@@ -134,7 +134,7 @@ only show a suspension if this extension asks, and `Camunda8SuspensionCheck` doe
 A run without a change costs one request per adapter id and tenant, plus one per thousand
 suspended instances. With changes it costs at most four more, plus one per thousand changed
 instances each. The numbers measured against `camunda/camunda:8.10.7` are in
-`DECISIONS.pending/1544.md`.
+decision 36 in the repository's DECISIONS.md.
 
 The interval is `vanillabp.adapters.<id>.cockpit.suspension-check-interval`, one hour by default,
 written as ISO-8601 (`PT30M`) or with a unit (`30m`). `0` switches the check off. The start says
