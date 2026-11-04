@@ -16,6 +16,7 @@ import io.vanillabp.cockpit.extension.spi.BusinessCockpitEventPublisher;
 import io.vanillabp.cockpit.extension.wiring.BusinessCockpitWiringService;
 import io.vanillabp.integration.adapter.spi.workflowtask.WorkflowTaskWiring;
 import io.vanillabp.integration.extension.spi.ExtensionWiringService;
+import io.vanillabp.integration.extension.spi.runtime.SuspendedWorkflowFound;
 
 /**
  * The Camunda 8 half of the Business Cockpit in VanillaBP's deployment pipeline.
@@ -279,6 +280,32 @@ public class Camunda8CockpitWiring implements ExtensionWiringService<BpmnModelIn
             bpmsProcessingContext.getMultiInstanceRegistry());
     // a cluster tells nobody that a workflow was suspended, so it is asked
     suspensionCheck.moduleStarted(bpmsProcessingContext.getAdapterId(), workflowModuleId);
+
+  }
+
+  /**
+   * The Camunda 8 adapter refused a call or let an outbox entry wait, because the workflow is
+   * suspended. The cockpit shows it at once, and does not wait for the next run of the
+   * suspension check. The check does the work on its own thread and returns at once, because this
+   * runs on the caller's thread.
+   */
+  @Override
+  public void workflowFoundSuspended(
+      final SuspendedWorkflowFound found,
+      final Camunda8ProcessingContext bpmsProcessingContext) {
+
+    final long processInstanceKey;
+    try {
+      processInstanceKey = Long.parseLong(found.workflowId());
+    } catch (final NumberFormatException e) {
+      logger
+          .debug(
+              "Camunda8[{}]: '{}' is no process instance key, so the Business Cockpit leaves the suspension to its check",
+              found.adapterId(), found.workflowId());
+      return;
+    }
+    suspensionCheck
+        .foundSuspended(found.adapterId(), found.workflowModuleId(), processInstanceKey, found.workflowAggregateId());
 
   }
 

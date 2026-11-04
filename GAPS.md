@@ -153,7 +153,9 @@ the audit log has an entry for an authenticated request. Lines 8.8 and 8.9 canno
 decision 36 in the repository's DECISIONS.md.
 
 **What it costs** a user of line 8.10: the cockpit shows a suspension or a resumption up to one
-interval late, one hour by default. Without an audit log entry it names nobody as `suspendedBy`.
+interval late, one hour by default. A suspension which an application runs into shows at once,
+because VanillaBP tells this extension about the refused call (story 2074). Without an audit log
+entry it names nobody as `suspendedBy`.
 
 **What would close it** is a listener or a job of the cluster on a suspension and a resumption. Until
 then this adapter asks the cluster, see the section "A suspended workflow" of the README.
