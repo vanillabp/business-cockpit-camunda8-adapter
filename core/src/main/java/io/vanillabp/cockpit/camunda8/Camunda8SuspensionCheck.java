@@ -77,7 +77,7 @@ import io.vanillabp.cockpit.extension.spi.WorkflowReference;
  * suspended instance is refused by the Camunda 8 adapter, and VanillaBP tells this extension.
  * {@link #foundSuspended} then reports that one instance on the thread of this check, the same way
  * a run would, without waiting for the next run. A run afterwards finds the instance known and
- * reports nothing new (see {@code DECISIONS.pending/2074.md}).
+ * reports nothing new (see decision 37 in the repository's DECISIONS.md).
  * <p>
  * The lines 8.8 and 8.9 cannot suspend an instance, and the check never runs there.
  */
