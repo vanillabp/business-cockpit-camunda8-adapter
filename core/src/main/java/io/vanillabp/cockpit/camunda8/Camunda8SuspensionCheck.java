@@ -73,6 +73,12 @@ import io.vanillabp.cockpit.extension.spi.WorkflowReference;
  * <b>Several nodes.</b> Every node of the application runs the check. The cockpit takes a
  * second report of the same suspension as a repetition and keeps the first moment.
  * <p>
+ * <b>At once, where the adapter found it.</b> An application which answers a task of a
+ * suspended instance is refused by the Camunda 8 adapter, and VanillaBP tells this extension.
+ * {@link #foundSuspended} then reports that one instance on the thread of this check, the same way
+ * a run would, without waiting for the next run. A run afterwards finds the instance known and
+ * reports nothing new (see {@code DECISIONS.pending/2074.md}).
+ * <p>
  * The lines 8.8 and 8.9 cannot suspend an instance, and the check never runs there.
  */
 public class Camunda8SuspensionCheck implements AutoCloseable {
@@ -152,6 +158,9 @@ public class Camunda8SuspensionCheck implements AutoCloseable {
 
   private ScheduledExecutorService scheduler;
 
+  /** Set by {@link #close()}, so no later report starts the thread again. */
+  private boolean closed;
+
   /**
    * Creates the check. It does nothing until the first workflow module starts.
    *
@@ -221,6 +230,31 @@ public class Camunda8SuspensionCheck implements AutoCloseable {
               adapterId, Camunda8SuspensionCheckInterval.keyOf(adapterId));
       return;
     }
+    final var firstRun = interval.compareTo(FIRST_RUN_AFTER) < 0
+        ? interval
+        : FIRST_RUN_AFTER;
+    runs
+        .put(
+            adapterId,
+            theScheduler()
+                .scheduleWithFixedDelay(
+                    () -> check(adapterId), firstRun.toMillis(), interval.toMillis(), TimeUnit.MILLISECONDS));
+    logger
+        .info(
+            "Camunda8[{}]: the Business Cockpit checks every {} whether somebody suspended or resumed a workflow of this cluster ('{}', 0 switches it off). Who did it comes from the cluster's audit log, which has entries only for authenticated requests. Without such an entry the cockpit names nobody",
+            adapterId, interval, Camunda8SuspensionCheckInterval.keyOf(adapterId));
+
+  }
+
+  /**
+   * The one thread of this check, started with its first use. A run and a report of
+   * {@link #foundSuspended} share it.
+   */
+  private synchronized ScheduledExecutorService theScheduler() {
+
+    if (closed) {
+      throw new IllegalStateException("the suspension check is closed");
+    }
     if (scheduler == null) {
       scheduler = Executors
           .newSingleThreadScheduledExecutor(runnable -> {
@@ -231,19 +265,90 @@ public class Camunda8SuspensionCheck implements AutoCloseable {
             return thread;
           });
     }
-    final var firstRun = interval.compareTo(FIRST_RUN_AFTER) < 0
-        ? interval
-        : FIRST_RUN_AFTER;
-    runs
-        .put(
-            adapterId,
-            scheduler
-                .scheduleWithFixedDelay(
-                    () -> check(adapterId), firstRun.toMillis(), interval.toMillis(), TimeUnit.MILLISECONDS));
-    logger
-        .info(
-            "Camunda8[{}]: the Business Cockpit checks every {} whether somebody suspended or resumed a workflow of this cluster ('{}', 0 switches it off). Who did it comes from the cluster's audit log, which has entries only for authenticated requests. Without such an entry the cockpit names nobody",
-            adapterId, interval, Camunda8SuspensionCheckInterval.keyOf(adapterId));
+    return scheduler;
+
+  }
+
+  /**
+   * Reports one instance which the Camunda 8 adapter found suspended, as a run would report it.
+   * It returns at once. The caller is the thread of the application or of its outbox, maybe
+   * inside a transaction which rolls back next. So the work runs on the thread of this check.
+   * <p>
+   * It is also done where the interval is 0. Then a suspension still shows at once, but a
+   * resumption is never seen.
+   *
+   * @param adapterId The configured adapter id which found it
+   * @param workflowModuleId The workflow module of the refused call
+   * @param processInstanceKey The suspended instance
+   * @param aggregateId The workflow aggregate's id, or <code>null</code> where the adapter did not
+   *          know it. Then it is read from the instance's variables
+   */
+  public void foundSuspended(
+      final String adapterId,
+      final String workflowModuleId,
+      final long processInstanceKey,
+      final String aggregateId) {
+
+    try {
+      if (!lookups.apply(adapterId).theClusterCanSuspend()) {
+        return;
+      }
+      theScheduler().execute(() -> reportFoundSuspended(adapterId, workflowModuleId, processInstanceKey, aggregateId));
+    } catch (final RuntimeException e) {
+      // a check which is closed already, or a cluster which is not configured. The hourly run
+      // is the net, so this is no reason to bother the caller
+      logger
+          .debug(
+              "Camunda8[{}]: the Business Cockpit could not take process instance {} to report it as suspended",
+              adapterId, processInstanceKey, e);
+    }
+
+  }
+
+  /**
+   * The work of {@link #foundSuspended}, on the thread of this check.
+   */
+  void reportFoundSuspended(
+      final String adapterId,
+      final String workflowModuleId,
+      final long processInstanceKey,
+      final String aggregateId) {
+
+    synchronized (oneRunAtATime) {
+      try {
+        final var scope = new Scope(adapterId, clients.of(adapterId).scope().tenantIdOf(workflowModuleId));
+        final var before = suspendedBefore.get(scope);
+        if ((before != null) && before.containsKey(processInstanceKey)) {
+          // reported already, by a run or by an earlier refusal. An outbox entry which waits
+          // ends up here every 30 seconds
+          return;
+        }
+        final var processes = processesToAskAbout(adapterId).getOrDefault(scope.tenantId(), Map.of());
+        final var cluster = lookups.apply(adapterId);
+        final var instance = cluster.instancesOf(scope.tenantId(), Set.of(processInstanceKey)).get(processInstanceKey);
+        if ((instance == null) || (instance.state() != State.SUSPENDED)) {
+          // resumed meanwhile, or the storage does not show it yet. The next run decides
+          return;
+        }
+        final var changes = new LinkedHashMap<Long, Change>();
+        changes.put(processInstanceKey, new Change(instance, true));
+        report(
+            scope, processes, cluster, changes, aggregateId == null
+                ? Map.of()
+                : Map.of(processInstanceKey, aggregateId));
+        // known from now on, so the next run reports nothing new. Before the first run there is
+        // no set yet. That run reports every suspended instance anyway, and the cockpit takes the
+        // report as a repetition, because its event id is the same
+        if (before != null) {
+          before.put(processInstanceKey, instance);
+        }
+      } catch (final RuntimeException e) {
+        logger
+            .warn(
+                "Camunda8[{}]: the Business Cockpit could not report process instance {} as suspended. The next check finds it",
+                adapterId, processInstanceKey, e);
+      }
+    }
 
   }
 
@@ -280,6 +385,7 @@ public class Camunda8SuspensionCheck implements AutoCloseable {
   @Override
   public synchronized void close() {
 
+    closed = true;
     runs.values().forEach(run -> run.cancel(false));
     runs.clear();
     startedModules.clear();
@@ -396,7 +502,7 @@ public class Camunda8SuspensionCheck implements AutoCloseable {
     }
 
     if (!changes.isEmpty()) {
-      report(scope, processes, cluster, changes);
+      report(scope, processes, cluster, changes, Map.of());
     } else {
       logger
           .debug(
@@ -413,7 +519,8 @@ public class Camunda8SuspensionCheck implements AutoCloseable {
       final Scope scope,
       final Map<String, Wired> processes,
       final Camunda8SuspensionLookups cluster,
-      final Map<Long, Change> changes) {
+      final Map<Long, Change> changes,
+      final Map<Long, String> knownAggregateIds) {
 
     final var keys = changes.keySet();
     final var whoDidIt = fromTheAuditLog(
@@ -422,6 +529,8 @@ public class Camunda8SuspensionCheck implements AutoCloseable {
     changes
         .values()
         .stream()
+        // an aggregate id the adapter handed over saves the search for its variable
+        .filter(change -> !knownAggregateIds.containsKey(change.instance().processInstanceKey()))
         .map(change -> processes.get(change.instance().scopedBpmnProcessId()))
         .filter(Objects::nonNull)
         .map(Wired::aggregateIdName)
@@ -445,9 +554,11 @@ public class Camunda8SuspensionCheck implements AutoCloseable {
       if (wired == null) {
         continue;
       }
-      final var aggregateId = variables
-          .getOrDefault(instance.processInstanceKey(), Map.of())
-          .get(wired.aggregateIdName());
+      final var aggregateId = knownAggregateIds.containsKey(instance.processInstanceKey())
+          ? knownAggregateIds.get(instance.processInstanceKey())
+          : variables
+              .getOrDefault(instance.processInstanceKey(), Map.of())
+              .get(wired.aggregateIdName());
       if (aggregateId == null) {
         logger
             .warn(

@@ -158,12 +158,18 @@ day for resumptions, so a resumption during a restart is not lost where the clus
 log. Every node of the application runs the check. The cockpit takes a second report of the same
 suspension as a repetition and keeps the first moment.
 
-A suspension is not reported at the moment somebody tries to complete a task of a suspended
-instance. The Camunda 8 adapter recognises that refusal and throws
-`io.vanillabp.spi.process.WorkflowSuspendedException` to the application which made the call.
-Nothing tells an extension about it. So the cockpit shows a suspension at most one interval late.
-Lines 8.8 and 8.9 ask nothing: their clusters cannot suspend, and `Camunda8SuspendedInstances` is
-the class per line. See gap 6 in [GAPS.md](./GAPS.md).
+A suspension shows at once where somebody tries to answer a task of a suspended instance. The
+Camunda 8 adapter recognises that refusal and throws `io.vanillabp.spi.process.WorkflowSuspendedException`
+to the application, or lets the outbox entry wait. Just before that, VanillaBP tells this extension.
+`Camunda8CockpitWiring#workflowFoundSuspended` hands the instance to `Camunda8SuspensionCheck#foundSuspended`,
+which reports it on the thread of the check, the same way a run would and with the same event id.
+It asks for the state of the instance first and reports nothing if it runs again. An instance it
+knows already costs nothing, which matters because a waiting outbox entry is reported every 30
+seconds. The next run then finds the instance known. This also works with the interval set to `0`,
+but then a resumption is never seen. A suspension which nobody runs into still shows at most one
+interval late. Lines 8.8 and 8.9 ask nothing: their clusters cannot suspend, and
+`Camunda8SuspendedInstances` is the class per line. See gap 6 in [GAPS.md](./GAPS.md) and
+[`DECISIONS.pending/2074.md`](./DECISIONS.pending/2074.md).
 
 ## Release lines
 

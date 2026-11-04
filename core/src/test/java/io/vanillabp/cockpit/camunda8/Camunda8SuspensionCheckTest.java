@@ -545,4 +545,99 @@ public class Camunda8SuspensionCheckTest {
 
   }
 
+  @Test
+  @DisplayName("An instance the adapter found suspended is reported at once, with its task and the event id of a run")
+  public void anInstanceTheAdapterFoundIsReportedAtOnce() {
+
+    cluster.suspended.put(INSTANCE, suspended(INSTANCE, SUSPENDED_AT));
+    cluster.all.put(INSTANCE, suspended(INSTANCE, SUSPENDED_AT));
+    cluster.auditLog.put(INSTANCE, new SuspensionChange(INSTANCE, true, SUSPENDED_AT, "demo"));
+    aStartedModule();
+
+    check.reportFoundSuspended(ADAPTER_ID, MODULE_ID, INSTANCE, "4711");
+
+    final var eventId = "suspended-%d-%d".formatted(INSTANCE, SUSPENDED_AT.toInstant().toEpochMilli());
+    verify(publisher)
+        .publishWorkflowSuspension(
+            eq(new WorkflowReference(ADAPTER_ID, MODULE_ID, PROCESS_ID, "3", "4711", String.valueOf(INSTANCE))),
+            eq(WorkflowEventKind.SUSPENDED), eq(eventId), eq(SUSPENDED_AT), eq("demo"), eq(EventTransaction.NEW));
+    verify(publisher)
+        .publishUserTaskSuspension(
+            any(), eq(UserTaskEventKind.SUSPENDED), eq(eventId), eq(SUSPENDED_AT), eq("demo"),
+            eq(EventTransaction.NEW));
+    assertTrue(
+        cluster.questions.stream().noneMatch(question -> question.startsWith("variables")),
+        "the adapter named the aggregate, so its variable is not searched: %s".formatted(cluster.questions));
+
+  }
+
+  @Test
+  @DisplayName("Once a run or an earlier refusal reported an instance, the adapter's repetitions ask nothing")
+  public void aKnownInstanceIsNotReportedAgain() {
+
+    cluster.suspended.put(INSTANCE, suspended(INSTANCE, SUSPENDED_AT));
+    cluster.all.put(INSTANCE, suspended(INSTANCE, SUSPENDED_AT));
+    aStartedModule();
+    check.check(ADAPTER_ID);
+    cluster.questions.clear();
+
+    // a waiting outbox entry finds the workflow suspended every 30 seconds
+    check.reportFoundSuspended(ADAPTER_ID, MODULE_ID, INSTANCE, "4711");
+    check.reportFoundSuspended(ADAPTER_ID, MODULE_ID, INSTANCE, "4711");
+
+    assertTrue(cluster.questions.isEmpty(), "nothing is asked: %s".formatted(cluster.questions));
+    verify(publisher).publishWorkflowSuspension(any(), any(), any(), any(), any(), any());
+
+  }
+
+  @Test
+  @DisplayName("An instance reported by a refusal is known to the next run, which reports nothing new")
+  public void theNextRunKnowsTheInstance() {
+
+    aStartedModule();
+    check.check(ADAPTER_ID);
+    cluster.suspended.put(INSTANCE, suspended(INSTANCE, SUSPENDED_AT));
+    cluster.all.put(INSTANCE, suspended(INSTANCE, SUSPENDED_AT));
+    check.reportFoundSuspended(ADAPTER_ID, MODULE_ID, INSTANCE, null);
+    cluster.questions.clear();
+
+    check.check(ADAPTER_ID);
+
+    assertEquals(List.of("suspended [%s]".formatted(PROCESS_ID)), cluster.questions);
+    verify(publisher).publishWorkflowSuspension(any(), any(), any(), any(), any(), any());
+
+  }
+
+  @Test
+  @DisplayName("An instance which runs again when the report is made is left to the next run")
+  public void anInstanceWhichRunsAgainIsNotReported() {
+
+    cluster.all.put(INSTANCE, withState(INSTANCE, State.ACTIVE));
+    aStartedModule();
+
+    check.reportFoundSuspended(ADAPTER_ID, MODULE_ID, INSTANCE, "4711");
+
+    verifyNoInteractions(publisher);
+
+  }
+
+  @Test
+  @DisplayName("The report runs on the thread of the check, also where the interval is 0, and never fails the caller")
+  public void theReportRunsOnTheThreadOfTheCheck() {
+
+    interval = Duration.ZERO;
+    cluster.all.put(INSTANCE, suspended(INSTANCE, SUSPENDED_AT));
+    aStartedModule();
+
+    check.foundSuspended(ADAPTER_ID, MODULE_ID, INSTANCE, "4711");
+
+    verify(publisher, timeout(5_000))
+        .publishWorkflowSuspension(any(), eq(WorkflowEventKind.SUSPENDED), any(), any(), any(), any());
+
+    // a check which is closed takes nothing, and says nothing to the caller
+    check.close();
+    check.foundSuspended(ADAPTER_ID, MODULE_ID, INSTANCE, "4711");
+
+  }
+
 }
