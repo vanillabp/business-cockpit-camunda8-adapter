@@ -169,7 +169,7 @@ seconds. The next run then finds the instance known. This also works with the in
 but then a resumption is never seen. A suspension which nobody runs into still shows at most one
 interval late. Lines 8.8 and 8.9 ask nothing: their clusters cannot suspend, and
 `Camunda8SuspendedInstances` is the class per line. See gap 6 in [GAPS.md](./GAPS.md) and
-[`DECISIONS.pending/2074.md`](./DECISIONS.pending/2074.md).
+[decision 37](./DECISIONS.md).
 
 ## Release lines
 
