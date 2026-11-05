@@ -54,7 +54,8 @@ jobs:
         # are the clients this repository runs with tonight.
         uses: actions/checkout@v7
         with:
-          repository: camunda-community-hub/vanillabp-camunda8-adapter
+          repository: vanillabp/camunda8-adapter
+          ref: main
           path: .camunda8-adapter
       - uses: actions/setup-java@v6
         with:
