@@ -25,7 +25,7 @@
        also break as soon as a module moves, and a reader who wants the module finds it from
        the root in one click. Guarded by Camunda8PublishedPomTest, see decision 12 in the
        repository's DECISIONS.md. -->
-  <url>https://github.com/vanillabp/businesscockpit-camunda8-adapter</url>
+  <url>https://github.com/vanillabp/business-cockpit-camunda8-adapter</url>
 
   <modules>
     <module>core</module>
@@ -37,9 +37,9 @@
   </modules>
 
   <scm child.scm.connection.inherit.append.path="false" child.scm.developerConnection.inherit.append.path="false" child.scm.url.inherit.append.path="false">
-    <connection>scm:git:https://github.com/vanillabp/businesscockpit-camunda8-adapter.git</connection>
-    <developerConnection>scm:git:https://github.com/vanillabp/businesscockpit-camunda8-adapter.git</developerConnection>
-    <url>https://github.com/vanillabp/businesscockpit-camunda8-adapter/tree/main</url>
+    <connection>scm:git:https://github.com/vanillabp/business-cockpit-camunda8-adapter.git</connection>
+    <developerConnection>scm:git:https://github.com/vanillabp/business-cockpit-camunda8-adapter.git</developerConnection>
+    <url>https://github.com/vanillabp/business-cockpit-camunda8-adapter/tree/main</url>
   </scm>
 
   <properties>

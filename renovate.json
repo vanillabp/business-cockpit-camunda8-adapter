@@ -3,7 +3,7 @@
   "extends": [
     "github>vanillabp/renovate-config",
     "github>vanillabp/camunda8-adapter//renovate/camunda8-lines.json",
-    "github>vanillabp/businesscockpit-camunda8-adapter//renovate/camunda8-lines.json"
+    "github>vanillabp/business-cockpit-camunda8-adapter//renovate/camunda8-lines.json"
   ],
   "timezone": "Europe/Vienna",
   "packageRules": [

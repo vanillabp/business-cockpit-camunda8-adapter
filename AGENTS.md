@@ -1,4 +1,4 @@
-# Working on businesscockpit-camunda8-adapter
+# Working on business-cockpit-camunda8-adapter
 
 The VanillaBP Business Cockpit integration for Camunda 8, built as an extension of VanillaBP
 Version 2, on Spring Boot and on Quarkus.
@@ -192,7 +192,7 @@ abbreviation out once. If a sentence trips you up when you read it aloud, rewrit
 This holds for every English text here: the README files, `DECISIONS.md`, this file, the
 Javadoc and comments which explain something, in the main code and in the tests, and the
 texts of commits and pull requests.
-It holds for the [wiki](https://github.com/vanillabp/businesscockpit-camunda8-adapter/wiki) as
+It holds for the [wiki](https://github.com/vanillabp/business-cockpit-camunda8-adapter/wiki) as
 well, because the wiki clone has no `AGENTS.md` of its own.
 
 Nothing a program reads is renamed for the sake of language. Class and method names,

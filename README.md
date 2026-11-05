@@ -4,8 +4,8 @@
 
 [![Apache License V.2](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
 
-Spring Boot [![Coverage](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fvanillabp.github.io%2Fbusinesscockpit-camunda8-adapter%2Fspring-boot-report%2Findex.html&search=Total.*%3F.([0-9]%2B)[^0-9]*%3F%25&replace=%241%25&flags=m&label=Coverage&color=green&cacheSeconds=60)](https://vanillabp.github.io/businesscockpit-camunda8-adapter/spring-boot-report)<br>
-Quarkus [![Coverage](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fvanillabp.github.io%2Fbusinesscockpit-camunda8-adapter%2Fquarkus-report%2Findex.html&search=Total.*%3F.([0-9]%2B)[^0-9]*%3F%25&replace=%241%25&flags=m&label=Coverage&color=green&cacheSeconds=60)](https://vanillabp.github.io/businesscockpit-camunda8-adapter/quarkus-report)
+Spring Boot [![Coverage](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fvanillabp.github.io%2Fbusiness-cockpit-camunda8-adapter%2Fspring-boot-report%2Findex.html&search=Total.*%3F.([0-9]%2B)[^0-9]*%3F%25&replace=%241%25&flags=m&label=Coverage&color=green&cacheSeconds=60)](https://vanillabp.github.io/business-cockpit-camunda8-adapter/spring-boot-report)<br>
+Quarkus [![Coverage](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fvanillabp.github.io%2Fbusiness-cockpit-camunda8-adapter%2Fquarkus-report%2Findex.html&search=Total.*%3F.([0-9]%2B)[^0-9]*%3F%25&replace=%241%25&flags=m&label=Coverage&color=green&cacheSeconds=60)](https://vanillabp.github.io/business-cockpit-camunda8-adapter/quarkus-report)
 
 This repository holds the [VanillaBP Business Cockpit](https://github.com/vanillabp/business-cockpit)
 integration for [Camunda 8](https://camunda.com/platform/), built as an extension of
@@ -95,7 +95,7 @@ gets a debug line rather than a warning.
 
 What the extension writes into a model, what its workers do with the jobs that produces and what it
 reads back is documented for users in the
-[wiki](https://github.com/vanillabp/businesscockpit-camunda8-adapter/wiki).
+[wiki](https://github.com/vanillabp/business-cockpit-camunda8-adapter/wiki).
 
 The extension reads one configuration key of its own,
 `vanillabp.adapters.<id>.cockpit.suspension-check-interval`, see
@@ -435,7 +435,7 @@ in your own application:
 
 ```json
 {
-  "extends": ["github>vanillabp/businesscockpit-camunda8-adapter//renovate/camunda8-lines.json"]
+  "extends": ["github>vanillabp/business-cockpit-camunda8-adapter//renovate/camunda8-lines.json"]
 }
 ```
 
