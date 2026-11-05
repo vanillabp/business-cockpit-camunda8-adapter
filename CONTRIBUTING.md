@@ -3,7 +3,7 @@
 This repository is the Business Cockpit adapter for Camunda 8. It is an extension of
 VanillaBP Version 2 and runs in the workflow application, on Spring Boot and on Quarkus. It
 tells the cockpit server about the user tasks and workflows it sees. How to use it is in the
-[wiki](https://github.com/vanillabp/businesscockpit-camunda8-adapter/wiki). This file is for
+[wiki](https://github.com/vanillabp/business-cockpit-camunda8-adapter/wiki). This file is for
 somebody who changes the code.
 
 ## From a bug to a pull request

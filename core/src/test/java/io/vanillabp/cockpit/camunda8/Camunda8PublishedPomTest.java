@@ -38,7 +38,7 @@ import io.vanillabp.integration.test.utils.SuppressOutputExtension;
 public class Camunda8PublishedPomTest {
 
   /** The repository every artifact of this build comes from, and the address all of them name. */
-  private static final String REPOSITORY = "https://github.com/vanillabp/businesscockpit-camunda8-adapter";
+  private static final String REPOSITORY = "https://github.com/vanillabp/business-cockpit-camunda8-adapter";
 
   @Test
   @DisplayName("the published POM asks for the Camunda 8 adapter of this release line")
