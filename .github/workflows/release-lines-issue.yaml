@@ -47,7 +47,7 @@ jobs:
       # decision 34 in the repository's DECISIONS.md.
       - uses: actions/checkout@v7
         with:
-          repository: camunda-community-hub/vanillabp-camunda8-adapter
+          repository: vanillabp/camunda8-adapter
           ref: main
           path: camunda8-adapter
           sparse-checkout: bin

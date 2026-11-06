@@ -6,9 +6,8 @@
 #
 # The client read is the entry of the line in camunda8-client-read.properties. The client the
 # adapter pins is the 'camunda8.version.line-<line>' property in the POM of
-# camunda-community-hub/vanillabp-camunda8-adapter. That POM is read as text: Maven would stop
-# at the snapshot BOM it imports from GitHub Packages long before it reached a property, and a
-# property is all this needs.
+# vanillabp/camunda8-adapter. That POM is read as text: a property is all this needs, and Maven
+# would have to resolve the snapshot BOM it imports before it reached that property.
 #
 # Only the lines in the record count. A line the adapter carries and this repository does not
 # build yet is none of our business. A line in the record which the adapter has dropped is an

@@ -70,7 +70,7 @@
          There is no client version in this file. The client arrives through the adapter, at
          the version the adapter's published POM names, and that is the adapter's pin for the
          same line (camunda8.version.line-<id> in
-         camunda-community-hub/vanillabp-camunda8-adapter). The cluster the integration tests
+         vanillabp/camunda8-adapter). The cluster the integration tests
          start is filtered out of the same pin, so client and cluster cannot differ unless
          something in this build overrides the client. Nothing here may manage
          io.camunda:camunda-client-java for that reason. Which adapter a line reads is
@@ -211,29 +211,29 @@
         <version>${business-cockpit.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.camunda.community.vanillabp</groupId>
+        <groupId>io.vanillabp</groupId>
         <artifactId>camunda8-adapter</artifactId>
         <version>${camunda8-adapter.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.camunda.community.vanillabp</groupId>
+        <groupId>io.vanillabp</groupId>
         <artifactId>camunda8-adapter-spring-boot</artifactId>
         <version>${camunda8-adapter.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.camunda.community.vanillabp</groupId>
+        <groupId>io.vanillabp</groupId>
         <artifactId>camunda8-adapter-quarkus</artifactId>
         <version>${camunda8-adapter.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.camunda.community.vanillabp</groupId>
+        <groupId>io.vanillabp</groupId>
         <artifactId>camunda8-adapter-quarkus-deployment</artifactId>
         <version>${camunda8-adapter.version}</version>
       </dependency>
       <!-- the Camunda 8 cluster the integration tests run against: the adapter publishes it
            per release line, so a line's tests here meet the cluster that line was built for -->
       <dependency>
-        <groupId>org.camunda.community.vanillabp</groupId>
+        <groupId>io.vanillabp</groupId>
         <artifactId>camunda8-adapter-test-support</artifactId>
         <version>${camunda8-adapter.version}</version>
       </dependency>
@@ -242,7 +242,7 @@
            moved it out of its test support, so that a test asking only this question keeps
            Testcontainers off its classpath. Only 'core' reads it. -->
       <dependency>
-        <groupId>org.camunda.community.vanillabp</groupId>
+        <groupId>io.vanillabp</groupId>
         <artifactId>camunda8-adapter-published-pom</artifactId>
         <version>${camunda8-adapter.version}</version>
       </dependency>
@@ -574,11 +574,11 @@
          any other profile on the command line would switch off. Rotating the lines means
          editing these profiles, the adapter properties, the default revision and the line
          table of the README, and it
-         follows whatever camunda-community-hub/vanillabp-camunda8-adapter does. -->
+         follows whatever vanillabp/camunda8-adapter does. -->
     <profile>
       <!-- a bugfix line: it takes fixes and nothing which needs a newer cluster. It did not
            end when 8.10 went GA, see the README of
-           camunda-community-hub/vanillabp-camunda8-adapter, section "How long a line
+           vanillabp/camunda8-adapter, section "How long a line
            lives" -->
       <id>line-8.8</id>
       <properties>

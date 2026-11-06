@@ -31,7 +31,7 @@ To build against an adapter you changed yourself, install that adapter for the l
 under the version of that line:
 
 ```bash
-# in the clone of camunda-community-hub/vanillabp-camunda8-adapter
+# in the clone of vanillabp/camunda8-adapter
 mvn -Pline-8.8 -Drevision=2.0.0-8.8-SNAPSHOT -Dmaven.test.skip=true \
   -pl core,spring-boot,quarkus/runtime,quarkus/deployment,test-support -am \
   clean install

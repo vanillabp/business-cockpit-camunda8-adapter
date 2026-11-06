@@ -42,7 +42,7 @@
     <dependency>
       <!-- the clusters this extension listens to, their clients held per configured adapter
         id by the adapter's own Quarkus extension -->
-      <groupId>org.camunda.community.vanillabp</groupId>
+      <groupId>io.vanillabp</groupId>
       <artifactId>camunda8-adapter-quarkus</artifactId>
     </dependency>
     <dependency>

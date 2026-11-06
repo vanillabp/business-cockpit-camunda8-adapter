@@ -42,7 +42,7 @@
       <!-- the clusters this extension listens to: their clients are held per configured
         adapter id by the adapter's Spring Boot module, which is the only place the extension
         takes them from -->
-      <groupId>org.camunda.community.vanillabp</groupId>
+      <groupId>io.vanillabp</groupId>
       <artifactId>camunda8-adapter-spring-boot</artifactId>
     </dependency>
     <dependency>
@@ -87,7 +87,7 @@
     <dependency>
       <!-- the cluster these tests run against, published by the Camunda 8 adapter per release
         line, so these tests meet the cluster the active line was built for -->
-      <groupId>org.camunda.community.vanillabp</groupId>
+      <groupId>io.vanillabp</groupId>
       <artifactId>camunda8-adapter-test-support</artifactId>
       <scope>test</scope>
     </dependency>
