@@ -178,7 +178,7 @@ technology, so users sit on different minors at the same time. Camunda support a
 against a cluster of the same minor version, and against one minor version newer while an upgrade
 is under way. A cluster older than the client is not covered. So a build fits a cluster of the
 minor version it was compiled against. One artifact cannot serve every minor. That is why the
-[VanillaBP Camunda 8 adapter](https://github.com/camunda-community-hub/vanillabp-camunda8-adapter)
+[VanillaBP Camunda 8 adapter](https://github.com/vanillabp/camunda8-adapter)
 is published once per Camunda 8 minor, with the minor in the version.
 
 This repository follows that scheme, and it has to. The extension compiles against the adapter's
@@ -201,7 +201,7 @@ says why under "How long a line lives".
 
 This repository names no Camunda client version. A line takes the client of the Camunda 8 adapter
 it builds against. The adapter's published POM names the client it pins for that line
-(`camunda8.version.line-<id>` in `camunda-community-hub/vanillabp-camunda8-adapter`), and the
+(`camunda8.version.line-<id>` in `vanillabp/camunda8-adapter`), and the
 client reaches this build and every application through that POM. So when the adapter raises a pin,
 the next build here follows. Nobody edits a number here, and no pull request is needed for it. See
 [decision 32](./DECISIONS.md).
@@ -381,7 +381,7 @@ Camunda 8 adapter stops the boot while it builds its client, and the message nam
 add. The lines 8.8 and 8.10 run on 5.5, and Spring Boot 4.1, which this repository builds against,
 manages 5.6. So neither this build nor those lines need anything. The numbers and how they were
 measured are in the section
-[Apache HttpClient 5](https://github.com/camunda-community-hub/vanillabp-camunda8-adapter#apache-httpclient-5)
+[Apache HttpClient 5](https://github.com/vanillabp/camunda8-adapter#apache-httpclient-5)
 of the adapter's README.
 
 ### What proves a line
@@ -456,14 +456,9 @@ Without Docker the integration tests skip themselves and the unit tests still ru
 Leaving the integration tests out takes `-DskipITs`. `-DskipTests` on its own skips the unit
 tests and still starts the integration tests, because Failsafe 3.6.0 no longer reads that property.
 
-The build reads the snapshots of the platform and of the cockpit from the snapshot repository of
-Maven Central, `https://central.sonatype.com/repository/maven-snapshots/`. The parent
-`io.vanillabp:release-parent` names that repository, and reading it needs no login. The snapshot of
-the Camunda 8 adapter is the exception. Its namespace belongs to the Camunda Community Hub, so it is
-published to `https://maven.pkg.github.com/camunda-community-hub/vanillabp-camunda8-adapter`.
-GitHub Packages asks for a token even for a public package. A local build needs that repository in
-`~/.m2/settings.xml`, with a GitHub token which has the scope `read:packages`. CI reads it through
-[.github/workflows/github-packages-settings.xml](./.github/workflows/github-packages-settings.xml).
+The build reads the snapshots of the platform, of the cockpit and of the Camunda 8 adapter from the
+snapshot repository of Maven Central, `https://central.sonatype.com/repository/maven-snapshots/`.
+The parent `io.vanillabp:release-parent` names that repository, and reading it needs no login.
 
 Snapshots of this repository go to the snapshot repository of Maven Central through the pipeline
 described below, and releases go to Maven Central under the groupId `io.vanillabp.businesscockpit`,

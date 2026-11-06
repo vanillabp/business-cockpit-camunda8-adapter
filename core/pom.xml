@@ -48,7 +48,7 @@
            names. So the client comes through the adapter and nowhere else, and an
            application of this line gets exactly that client. See decision 32 in the
            repository's DECISIONS.md. -->
-      <groupId>org.camunda.community.vanillabp</groupId>
+      <groupId>io.vanillabp</groupId>
       <artifactId>camunda8-adapter</artifactId>
     </dependency>
     <dependency>
@@ -88,7 +88,7 @@
         The class used to sit in 'camunda8-adapter-test-support', which starts clusters and
         so put Testcontainers on this module's test classpath. Nothing here wants a cluster.
         The module named here holds that one class and needs nothing but the JDK. -->
-      <groupId>org.camunda.community.vanillabp</groupId>
+      <groupId>io.vanillabp</groupId>
       <artifactId>camunda8-adapter-published-pom</artifactId>
       <scope>test</scope>
     </dependency>

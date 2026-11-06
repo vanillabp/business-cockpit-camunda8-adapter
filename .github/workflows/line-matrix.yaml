@@ -9,7 +9,7 @@ name: Release lines
     # scheduled run rather than starting it at the given time, and the wait is hours long:
     # asked for 01:37 UTC, the run of the 16th of September 2026 started at 06:38, which is
     # half past eight in Berlin and right when somebody is pushing to this repository. The
-    # matrix of camunda-community-hub/vanillabp-camunda8-adapter answers that the same way,
+    # matrix of vanillabp/camunda8-adapter answers that the same way,
     # by asking hours before the hour it wants, and its runs start between 04:45 and 05:10
     # UTC. So this one asks the night before. The minute is a crooked one because GitHub's
     # queue is longest on the hour, and it is not the 23rd, so the two repositories do not
@@ -43,18 +43,9 @@ name: Release lines
           read as a failure.
         value: "${{ jobs.ga-lines.outputs.broken }}"
 # A called workflow may not ask for more than the workflow calling it granted, and the
-# pull-request checks grant 'contents: read'. Nothing here needs more: what the build reads from
-# GitHub Packages, the Camunda 8 adapter, it reads with VANILLABP_USER_TOKEN and not with the
-# workflow's own token.
+# pull-request checks grant 'contents: read'. Nothing here needs more.
 permissions:
   contents: read
-env:
-  # The Camunda 8 adapter is a snapshot in GitHub Packages until the release, because its
-  # namespace belongs to the Camunda Community Hub. Reading it needs a token, see
-  # github-packages-settings.xml. The platform and the cockpit's extensions-commons come from
-  # the snapshot repository of Maven Central, which needs no login.
-  USER_NAME: "${{ secrets.VANILLABP_USER_NAME }}"
-  USER_TOKEN: "${{ secrets.VANILLABP_USER_TOKEN }}"
 jobs:
   # The live lines are not maintained here: they are the line-* profiles of the POM, which
   # also name the adapter of each line. So the matrix cannot fall behind the build.
@@ -76,7 +67,7 @@ jobs:
       # reader of the same property would be a second opinion about it.
       - uses: actions/checkout@v7
         with:
-          repository: camunda-community-hub/vanillabp-camunda8-adapter
+          repository: vanillabp/camunda8-adapter
           ref: main
           path: camunda8-adapter
       - id: list
@@ -155,8 +146,7 @@ jobs:
         # so the build proves the coordinates as well as the code. The adapter version is
         # the one the line profile names. 'install' without 'verify': install runs every
         # phase verify has, and naming both compiled each module twice for nothing.
-        run: mvn -s "$GITHUB_WORKSPACE/.github/workflows/github-packages-settings.xml"
-          --batch-mode --no-transfer-progress --update-snapshots
+        run: mvn --batch-mode --no-transfer-progress --update-snapshots
           -Pline-${{ matrix.line }} -Drevision=0.9.0-${{ matrix.line }}-SNAPSHOT
           clean install
       # A nightly line going red otherwise leaves nothing behind, so whoever reads the
@@ -192,25 +182,24 @@ jobs:
         # repository's DECISIONS.md.
         if: always()
         env:
-          SETTINGS: "${{ github.workspace }}/.github/workflows/github-packages-settings.xml"
           LINE: "${{ matrix.line }}"
         run: |
           set -euo pipefail
           # The adapter's jars as Maven resolved them for this line. A snapshot can lie in
           # the local repository under its plain and under its timestamped name, and both
           # hold the same build, so either one will do.
-          adapter="$(mvn -s "$SETTINGS" --batch-mode --no-transfer-progress --quiet \
+          adapter="$(mvn --batch-mode --no-transfer-progress --quiet \
             "-Pline-${LINE}" -N help:evaluate -Dexpression=camunda8-adapter.version \
             -DforceStdout)"
           jar_of() {
-            find "${HOME}/.m2/repository/org/camunda/community/vanillabp/$1/${adapter}" \
+            find "${HOME}/.m2/repository/io/vanillabp/$1/${adapter}" \
               -name "$1-*.jar" ! -name '*-sources.jar' ! -name '*-javadoc.jar' | sort | tail -1
           }
           properties="$(unzip -p "$(jar_of camunda8-adapter-test-support)" camunda8-cluster.properties)"
           echo "$properties"
           unzip -p "$(jar_of camunda8-adapter)" META-INF/vanillabp/adapter-camunda8.properties
           image="$(echo "$properties" | sed -n 's|^cluster\.image=||p')"
-          mvn -s "$SETTINGS" --batch-mode --no-transfer-progress --quiet \
+          mvn --batch-mode --no-transfer-progress --quiet \
             "-Pline-${LINE}" "-Drevision=0.9.0-${LINE}-SNAPSHOT" \
             -pl core dependency:list \
             -DincludeGroupIds=io.camunda -DincludeArtifactIds=camunda-client-java \
@@ -221,7 +210,7 @@ jobs:
           # the tag rather than the whole name, so a renamed image is still compared
           if [ "${image##*:}" != "${client}" ]; then
             echo "The client should be the one the Camunda 8 adapter of line ${LINE} pins," >&2
-            echo "camunda8.version.line-${LINE} in camunda-community-hub/vanillabp-camunda8-adapter," >&2
+            echo "camunda8.version.line-${LINE} in vanillabp/camunda8-adapter," >&2
             echo "and the cluster is filtered out of the same pin. This repository names no" >&2
             echo "client version, so something in this build manages io.camunda:camunda-client-java." >&2
             echo "Find it with: mvn -Pline-${LINE} -pl core -am dependency:tree -Dverbose -Dincludes=io.camunda" >&2
@@ -241,12 +230,11 @@ jobs:
         # red over it.
         if: "!cancelled()"
         env:
-          SETTINGS: "${{ github.workspace }}/.github/workflows/github-packages-settings.xml"
           LINE: "${{ matrix.line }}"
         run: |
           set -euo pipefail
           # '-Dverbose' prints the version each path asked for, which the plain tree drops
-          mvn -s "$SETTINGS" --batch-mode --no-transfer-progress --quiet \
+          mvn --batch-mode --no-transfer-progress --quiet \
             "-Pline-${LINE}" "-Drevision=0.9.0-${LINE}-SNAPSHOT" \
             -pl core dependency:tree -Dverbose \
             -Dincludes=com.google.protobuf:protobuf-java \
@@ -255,7 +243,7 @@ jobs:
       # What this line did, written down for the job 'ga-lines' below. A matrix cannot hand
       # one result per line to another job: every job of it writes the same output and the
       # last one to finish overwrites the rest. So each line leaves a file named after
-      # itself. The same shape as in camunda-community-hub/vanillabp-camunda8-adapter.
+      # itself. The same shape as in vanillabp/camunda8-adapter.
       #
       # This file is also the only place which tells the truth about a preview line. Such a
       # line runs with 'continue-on-error', so the result it hands to another job is a

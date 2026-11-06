@@ -28,7 +28,7 @@ concurrency:
   # The publish keeps its own group, so a release and a publish run beside each other.
   # They cannot write the same thing. Both upload through the profile 'central-portal',
   # but a release writes fixed versions and the publish of main writes the snapshot.
-  group: businesscockpit-camunda8-adapter-release
+  group: business-cockpit-camunda8-adapter-release
   cancel-in-progress: false
 permissions:
   contents: read
@@ -62,7 +62,6 @@ jobs:
   # See decision 9 in the repository's DECISIONS.md.
   lines:
     uses: ./.github/workflows/line-matrix.yaml
-    secrets: inherit
 
   # The gate itself. It runs whatever the matrix did, because this job and not the matrix
   # decides which lines a release waits for, and it still has to read which lines were red
@@ -217,8 +216,7 @@ jobs:
         # what the publish gets. The lines release one at a time, so a line which hangs
         # holds every line after it.
         timeout-minutes: 60
-        run: mvn -s $GITHUB_WORKSPACE/.github/workflows/github-packages-settings.xml
-          --batch-mode --no-transfer-progress
+        run: mvn --batch-mode --no-transfer-progress
           -Pline-${{ matrix.line }},release,central-portal
           -Drevision=${{ github.event.inputs.release_version }}-${{ matrix.line }}
           $TRAIN_ARGS clean deploy
@@ -231,8 +229,6 @@ jobs:
           MAVEN_GPG_PASSPHRASE: "${{ secrets.MAVEN_GPG_PASSPHRASE }}"
           MAVEN_USERNAME: "${{ secrets.MAVEN_CENTRAL_PORTAL_TOKEN_USER }}"
           MAVEN_PASSWORD: "${{ secrets.MAVEN_CENTRAL_PORTAL_TOKEN_PW }}"
-          USER_NAME: "${{ secrets.VANILLABP_USER_NAME }}"
-          USER_TOKEN: "${{ secrets.VANILLABP_USER_TOKEN }}"
       - name: Pack the bundle for the release train
         if: inputs.train != ''
         env:

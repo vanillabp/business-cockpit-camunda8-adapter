@@ -45,7 +45,7 @@ public class Camunda8PublishedPomTest {
   public void thePublishedPomAsksForTheAdapterOfThisLine() {
 
     thePublishedPom()
-        .asksFor("org.camunda.community.vanillabp", "camunda8-adapter", theAdapterToExpect());
+        .asksFor("io.vanillabp", "camunda8-adapter", theAdapterToExpect());
 
   }
 

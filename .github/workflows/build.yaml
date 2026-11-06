@@ -16,23 +16,15 @@ concurrency:
   # publish workflow was never needed for this build: it runs 'install' with read
   # access to the registry and uploads nothing, so it can neither overwrite a snapshot
   # nor be overwritten by one.
-  group: businesscockpit-camunda8-adapter-pr-build-${{ github.ref }}
+  group: business-cockpit-camunda8-adapter-pr-build-${{ github.ref }}
   cancel-in-progress: false
 permissions:
   contents: read
-env:
-  # The Camunda 8 adapter is a snapshot in GitHub Packages until the release, because its
-  # namespace belongs to the Camunda Community Hub. Reading it needs a token, see
-  # github-packages-settings.xml. The platform and the cockpit's extensions-commons come from
-  # the snapshot repository of Maven Central, which needs no login.
-  USER_NAME: "${{ secrets.VANILLABP_USER_NAME }}"
-  USER_TOKEN: "${{ secrets.VANILLABP_USER_TOKEN }}"
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: read
     steps:
       - uses: actions/checkout@v7
       # the Maven the publish of main runs with, see publish-snapshots.yaml for why it is not
@@ -57,11 +49,7 @@ jobs:
         # worst. The same reason as in line-matrix.yaml: without a limit a step which
         # stops moving holds the runner for the six hours GitHub gives a job by default.
         timeout-minutes: 30
-        run: mvn -s $GITHUB_WORKSPACE/.github/workflows/github-packages-settings.xml
-          --batch-mode --no-transfer-progress --update-snapshots install
-        env:
-          USER_NAME: "${{ secrets.VANILLABP_USER_NAME }}"
-          USER_TOKEN: "${{ secrets.VANILLABP_USER_TOKEN }}"
+        run: mvn --batch-mode --no-transfer-progress --update-snapshots install
       # what a failing test printed is in these reports, and for a test booting its
       # application in a forked JVM it is ONLY in that application's own log file
       - name: Upload the test reports of a failed build
@@ -84,7 +72,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: read
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-java@v6
@@ -97,8 +84,7 @@ jobs:
         # 3.7 minutes and the median 2.5.
         timeout-minutes: 20
         env:
-          MAVEN_ARGS: -s ${{ github.workspace }}/.github/workflows/github-packages-settings.xml
-            --update-snapshots
+          MAVEN_ARGS: --update-snapshots
         run: bin/api-identity.sh
 
   # The Renovate configuration is not read, it is run: the validator on the repository
@@ -184,7 +170,6 @@ jobs:
   # says. See decision 14 in the repository's DECISIONS.md.
   lines:
     uses: ./.github/workflows/line-matrix.yaml
-    secrets: inherit
 
   # One name for branch protection to require. The name is older than the rule above: it was
   # given while a moved pin was what bought the matrix. It stays, because branch protection

@@ -9,11 +9,11 @@
   "packageRules": [
     {
       "description": "VanillaBP, the Business Cockpit and the BPMS adapters follow the framework, not Renovate: their versions are bumped when a release is cut, and while they are snapshots there is nothing to look up. Once the Camunda 8 adapter is released per line, the camunda8-adapter.version.line-* properties of the POM are what moves, and the preset extended above keeps each of them inside its own line.",
-      "matchPackageNames": ["/^io\\.vanillabp/", "/^org\\.camunda\\.community\\.vanillabp/"],
+      "matchPackageNames": ["/^io\\.vanillabp/"],
       "enabled": false
     },
     {
-      "description": "Camunda is not Renovate's business here. This repository names no client version: each line takes the client of the Camunda 8 adapter it builds against, which is that adapter's pin for the line, and the cluster of the integration tests comes from the same pin. Renovate raises that pin in camunda-community-hub/vanillabp-camunda8-adapter, and the next build here follows it without a pull request. A rule here would only add a second number. See decision 32 in DECISIONS.md.",
+      "description": "Camunda is not Renovate's business here. This repository names no client version: each line takes the client of the Camunda 8 adapter it builds against, which is that adapter's pin for the line, and the cluster of the integration tests comes from the same pin. Renovate raises that pin in vanillabp/camunda8-adapter, and the next build here follows it without a pull request. A rule here would only add a second number. See decision 32 in DECISIONS.md.",
       "matchPackageNames": ["/^io\\.camunda/"],
       "enabled": false
     },
