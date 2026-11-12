@@ -1403,3 +1403,49 @@ while workflows run is synchronous, isolated and has no outbox.
 
 **Where it is cited.** javadoc of `Camunda8SuspensionCheck` and `Camunda8CockpitWiring`, the README
 section "A suspended workflow", `GAPS.md` gap 6.
+
+## 38. A snapshot carries no sources jar and no javadoc jar, and a request Central refuses with 429 or 503 is repeated
+
+Maven Central sits behind Cloudflare. It answered the GitHub runners with 429 Too Many Requests,
+and a publish of a snapshot failed in the middle. Every file a publish uploads is one more request,
+so a snapshot now uploads fewer files, and a refused request is repeated instead of failing the
+build. The Business Cockpit made the same change, see decision 85 in the DECISIONS.md of
+`business-cockpit`.
+
+A snapshot carries the jar, the POM and their checksums, and nothing else. The root POM no longer
+binds `maven-source-plugin`. It did so before, so that a snapshot showed sources in the IDE. Nobody
+builds against the classes of this adapter. An application adds the dependency and lets Spring
+Boot or Quarkus wire it, so a sources jar and a javadoc jar of a snapshot help nobody. This
+repository never bound a javadoc jar outside a release.
+
+A release still carries a sources jar and a javadoc jar for every module it publishes. The profile
+`release` of `io.vanillabp:release-parent` binds both, together with the signature.
+
+The javadoc check stays in every build. It is the execution `check-javadoc` of the parent, and it
+does not depend on the jar. With `failOnWarnings` of the root POM, a javadoc error or warning still
+fails the pull request, and not only the release.
+
+Every module is published as before. The release lines are profiles of the same POM (decision
+35), so this one change covers every line.
+
+`.mvn/maven.config` tells the HTTP transport of Maven Resolver 1.9, the one in Maven 3.9, how to
+repeat a request which a server answers with 429 or 503:
+
+|                        property                         |   value   |                             what it means                             |
+|---------------------------------------------------------|-----------|-----------------------------------------------------------------------|
+| `aether.connector.http.retryHandler.count`              | `2`       | how often one request is repeated                                     |
+| `aether.connector.http.retryHandler.interval`           | `15000`   | the pause before repeat n is n times this, in milliseconds            |
+| `aether.connector.http.retryHandler.intervalMax`        | `2100000` | a longer pause, also one asked for by `Retry-After`, ends the repeats |
+| `aether.connector.http.retryHandler.serviceUnavailable` | `429,503` | the answers which are repeated                                        |
+| `aether.connector.basic.parallelPut`                    | `false`   | one upload after the other, not five at once                          |
+
+Maven Central answers a GitHub runner with 429 and a `Retry-After` of about half an hour. Its
+limit counts the requests of the runner's address, which other users share, and a request during
+the block makes the block longer. So the resolver waits as long as the header asks, up to 35
+minutes, and repeats a request at most twice. A publish which runs into the block takes half an
+hour longer instead of failing. Without the header, the pause before repeat n is n times 15
+seconds. Without the file, the resolver repeats three times within 30 seconds. The file
+applies to every build, on a laptop and in a pull request as well, and that is meant.
+
+A developer who opens a class of a snapshot in the IDE sees decompiled code. A released version
+has sources and javadoc.
