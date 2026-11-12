@@ -1433,15 +1433,18 @@ repeat a request which a server answers with 429 or 503:
 
 |                        property                         |   value   |                             what it means                             |
 |---------------------------------------------------------|-----------|-----------------------------------------------------------------------|
-| `aether.connector.http.retryHandler.count`              | `8`       | how often one request is repeated                                     |
+| `aether.connector.http.retryHandler.count`              | `2`       | how often one request is repeated                                     |
 | `aether.connector.http.retryHandler.interval`           | `15000`   | the pause before repeat n is n times this, in milliseconds            |
-| `aether.connector.http.retryHandler.intervalMax`        | `600000`  | a longer pause, also one asked for by `Retry-After`, ends the repeats |
+| `aether.connector.http.retryHandler.intervalMax`        | `2100000` | a longer pause, also one asked for by `Retry-After`, ends the repeats |
 | `aether.connector.http.retryHandler.serviceUnavailable` | `429,503` | the answers which are repeated                                        |
 | `aether.connector.basic.parallelPut`                    | `false`   | one upload after the other, not five at once                          |
 
-Without the header `Retry-After`, one request waits 15, 30, 45 and so on up to 120 seconds, 9
-minutes for all eight repeats. With the header, it waits as long as the server asks, up to ten
-minutes each time. Without the file, the resolver repeats three times within 30 seconds. The file
+Maven Central answers a GitHub runner with 429 and a `Retry-After` of about half an hour. Its
+limit counts the requests of the runner's address, which other users share, and a request during
+the block makes the block longer. So the resolver waits as long as the header asks, up to 35
+minutes, and repeats a request at most twice. A publish which runs into the block takes half an
+hour longer instead of failing. Without the header, the pause before repeat n is n times 15
+seconds. Without the file, the resolver repeats three times within 30 seconds. The file
 applies to every build, on a laptop and in a pull request as well, and that is meant.
 
 A developer who opens a class of a snapshot in the IDE sees decompiled code. A released version
