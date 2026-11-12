@@ -10,6 +10,14 @@ entry of THIS repository. A decision the platform shares has its own entry in
 entry in `business-cockpit`. A pointer into another repository is the fragile kind this log exists
 to avoid.
 
+Entries written before 2026-11-06 name the VanillaBP Camunda 8 adapter by its old place: the
+repository `camunda-community-hub/vanillabp-camunda8-adapter` and the groupId
+`org.camunda.community.vanillabp`. Since story 1770 the adapter is built in
+`vanillabp/camunda8-adapter` again, with the groupId `io.vanillabp`. The copy in the Camunda
+Community Hub holds only version 1. The adapter's decision log moved with it and kept its numbers,
+so a decision cited by number is found under the same number in `vanillabp/camunda8-adapter`. Each
+entry below which names the old place says so in a note.
+
 ## 1. A workflow begins at its start events, not at the process
 
 Version 1 reported a started workflow from a `start` execution listener of the `bpmn:process`. That
@@ -296,6 +304,10 @@ now, see decision 14, and the check runs there like on every other line.
 
 ## 11. A cancelled case is reported from 8.10 on, and the model pays a version for it
 
+*Since story 1770 (2026-11-06) the adapter's decision log is the one in
+`vanillabp/camunda8-adapter`. The numbers cited here are the same there. See the note at the top
+of this log.*
+
 Camunda 8.10 brought the `cancel` execution listener. The cluster takes it on the PROCESS element
 and nowhere else. It runs when an instance is terminated, after every child element has terminated
 and before the instance reaches its final state. At that moment the `end` listener beside it does
@@ -435,6 +447,10 @@ See [What an application pins itself](./README.md#what-an-application-pins-itsel
 
 ## 13. The cockpit's workers lease what the adapter leases
 
+*Since story 1770 (2026-11-06) the adapter's decision log is the one in
+`vanillabp/camunda8-adapter`. The numbers cited here are the same there. See the note at the top
+of this log.*
+
 Camunda 8.10 gave a job activation a lease. A worker which asks for one gets a token with every
 job, and the cluster takes an answer to that job only from whoever holds the newest token.
 
@@ -534,6 +550,10 @@ empty everywhere and stays, because the next line which needs an exclusion needs
 at once.
 
 ## 14. The preview line is built every night, and a red one holds up nothing - narrowed by decision 16, which holds while no line is a preview line
+
+*Since story 1770 (2026-11-06) the adapter's decision log is the one in
+`vanillabp/camunda8-adapter`. The numbers cited here are the same there. See the note at the top
+of this log.*
 
 The nightly matrix builds every line this repository defines, the preview line included. What the
 cluster of that line cannot serve is left out one level deeper: the tests which need a
@@ -956,6 +976,10 @@ a test deploys `ForeignProcess` straight to the cluster.
 
 ## 26. A listener job carries what the details providers read
 
+*Since story 1770 (2026-11-06) the adapter's decision log is the one in
+`vanillabp/camunda8-adapter`. The numbers cited here are the same there. See the note at the top
+of this log.*
+
 A `@UserTaskDetailsProvider` method may take a process variable with `@TaskParam`, and the SPI
 promises it a value. A Camunda 8 job carries only the variables its worker names. So a worker of
 this extension which asked for the variable with the workflow aggregate's id and for nothing else
@@ -1158,6 +1182,10 @@ version resolved, so the POM of each line names the client the adapter pins for 
 adapter a line reads is still ours: the `camunda8-adapter.version.line-*` properties and the line
 profiles.
 
+*Changed on 2026-11-06 by story 1770.* The client comes through `io.vanillabp:camunda8-adapter`
+now, and the pin of each line is `camunda8.version.line-<id>` in `vanillabp/camunda8-adapter`. The
+rest of this paragraph holds.
+
 Before this, the client was pinned here per line by hand, as decision 10 asked, and copied from
 the adapter. The adapter's Renovate raises its pins and merges patches by itself. The pins here
 were left to people on purpose. So each Camunda patch turned the nightly run red with green tests,
@@ -1244,6 +1272,9 @@ could ever raise that entry.
 ## 34. The issue of a red line quotes the step which broke, read by the adapter's script
 
 Built by story 1492 on 2026-10-14. It adds to the issue of decision 9.
+
+*Changed on 2026-11-06 by story 1770.* The script is checked out from `vanillabp/camunda8-adapter`
+now. Decision 79 has the same number there.
 
 The issue of a red line quoted Maven's `[ERROR]` lines and nothing else. On 2026-10-13 line 8.10
 went red in the step which compares the cluster with the client. That is a shell check, and it
