@@ -335,30 +335,34 @@ the adapter waits out for the same storage. See [decision 7](./DECISIONS.md).
 
 The published POMs carry no `dependencyManagement`, so what this repository pins for its own
 build reaches nobody. An application resolves each dependency from its own platform BOM, or from
-the Camunda client when nothing of its own manages it. There are two cases where that is not
-enough.
+the Camunda client when nothing of its own manages it. There are two cases where that may not
+be enough.
 
 Protobuf refuses a runtime older than the generated code linked against it, and the Camunda
-client brings generated code. These are the numbers involved, read on 2026-10-01 from the client
-POM of each line and from the two platform BOMs this repository builds against:
+client brings generated code. A newer runtime is fine. These are the numbers involved, read on
+2026-11-13 from the clients of each line and from the two platform BOMs this repository builds
+against:
 
-| Line | Client pin | Its gencode | Spring Boot 4.1.1 manages | Quarkus 3.40.0 manages |
-|------|------------|-------------|---------------------------|------------------------|
-| 8.8  | `8.8.40`   | `4.31.1`    | `4.35.1`                  | `4.35.0`               |
-| 8.9  | `8.9.21`   | `4.33.6`    | `4.35.1`                  | `4.35.0`               |
-| 8.10 | `8.10.0`   | `4.36.2`    | `4.35.1`                  | `4.35.0`               |
+| Line | Client pin | Its gencode | Its POM names | Spring Boot 4.1.2 manages | Quarkus 3.40.1.1 manages |
+|------|------------|-------------|---------------|---------------------------|--------------------------|
+| 8.8  | `8.8.46`   | `4.31.1`    | `4.31.1`      | `4.36.2`                  | `4.35.0`                 |
+| 8.9  | `8.9.28`   | `4.33.6`    | `4.33.6`      | `4.36.2`                  | `4.35.0`                 |
+| 8.10 | `8.10.9`   | `4.34.2`    | `4.36.2`      | `4.36.2`                  | `4.35.0`                 |
 
-An imported BOM beats a transitive version. So on the two bugfix lines the application runs a
-protobuf newer than its client asks for, which is what protobuf allows. On line 8.10 both platforms
-hand it an older one. The VanillaBP Camunda 8 adapter asks protobuf that question while it builds
-its client, so the boot stops there and the message names both versions and the entry to add.
-Before that check the answer came at the first command touching the protocol, an
-`ExceptionInInitializerError` out of whichever part of the application had sent it.
+The gencode and the version a client's POM names are not always the same. From `8.10.0-rc3` on
+the 8.10 client names 4.36.2, while its generated classes check for 4.34.2. Before that, up to
+`8.10.0-rc1`, they carried 4.36.2, and an application on line 8.10 had to pin protobuf.
 
-An application on line 8.10 therefore pins `protobuf-java` itself, to the gencode of that line's
-client, in its own `dependencyManagement` and above the platform BOM. Nothing published here can do
-it for the application: its own BOM wins over anything arriving through us. The two older lines need
-no pin. Read the number of a client rather than guess it:
+An imported BOM beats a transitive version, so the application runs what its platform manages.
+Today that is at least the gencode on every line, so no line needs a pin. Spring Boot 4.0 manages
+no protobuf, and the client brings its own. An application pins `protobuf-java` itself when it
+gets an older one from somewhere else, such as another BOM or a library, or when a future client
+raises its gencode past what the platform manages. It pins it in its own `dependencyManagement`,
+above the platform BOM, to the version its client's POM names, which is never older than the
+gencode. Nothing published here can do it for the application: its own BOM wins over anything
+arriving through us. The VanillaBP Camunda 8 adapter asks protobuf while it builds its client, so a
+runtime which is too old stops the boot there, with a message naming both versions and the entry
+to add. Read the version a client's POM names rather than guess it:
 
 ```bash
 mvn -Pline-8.10 -pl spring-boot dependency:tree -Dverbose -Dincludes=com.google.protobuf
