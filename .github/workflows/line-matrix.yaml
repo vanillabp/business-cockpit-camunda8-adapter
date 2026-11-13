@@ -46,6 +46,18 @@ name: Release lines
 # pull-request checks grant 'contents: read'. Nothing here needs more.
 permissions:
   contents: read
+  # reads the snapshots of the other VanillaBP repositories from GitHub Packages, see the
+  # env below
+  packages: read
+# Where Maven reads the snapshots of the other VanillaBP repositories from, see
+# .github/maven/settings.xml: from GitHub Packages once the organization sets the Actions
+# variable VANILLABP_SNAPSHOTS_FROM to 'github-packages', else from the snapshot repository of
+# Maven Central. Reading GitHub Packages needs a token even for public packages. The
+# GITHUB_TOKEN of the run is enough, because every job which runs Maven asks for
+# 'packages: read'.
+env:
+  VBP_SNAPSHOTS_FROM: "${{ vars.VANILLABP_SNAPSHOTS_FROM == 'github-packages' && 'github-packages' || 'central' }}"
+  VBP_PACKAGES_READ_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 jobs:
   # The live lines are not maintained here: they are the line-* profiles of the POM, which
   # also name the adapter of each line. So the matrix cannot fall behind the build.
@@ -160,7 +172,7 @@ jobs:
         # so the build proves the coordinates as well as the code. The adapter version is
         # the one the line profile names. 'install' without 'verify': install runs every
         # phase verify has, and naming both compiled each module twice for nothing.
-        run: mvn --batch-mode --no-transfer-progress --update-snapshots
+        run: mvn -s .github/maven/settings.xml --batch-mode --no-transfer-progress --update-snapshots
           -Pline-${{ matrix.line }} -Drevision=0.9.0-${{ matrix.line }}-SNAPSHOT
           clean install
       # A nightly line going red otherwise leaves nothing behind, so whoever reads the
@@ -202,7 +214,7 @@ jobs:
           # The adapter's jars as Maven resolved them for this line. A snapshot can lie in
           # the local repository under its plain and under its timestamped name, and both
           # hold the same build, so either one will do.
-          adapter="$(mvn --batch-mode --no-transfer-progress --quiet \
+          adapter="$(mvn -s .github/maven/settings.xml --batch-mode --no-transfer-progress --quiet \
             "-Pline-${LINE}" -N help:evaluate -Dexpression=camunda8-adapter.version \
             -DforceStdout)"
           jar_of() {
@@ -213,7 +225,7 @@ jobs:
           echo "$properties"
           unzip -p "$(jar_of camunda8-adapter)" META-INF/vanillabp/adapter-camunda8.properties
           image="$(echo "$properties" | sed -n 's|^cluster\.image=||p')"
-          mvn --batch-mode --no-transfer-progress --quiet \
+          mvn -s .github/maven/settings.xml --batch-mode --no-transfer-progress --quiet \
             "-Pline-${LINE}" "-Drevision=0.9.0-${LINE}-SNAPSHOT" \
             -pl core dependency:list \
             -DincludeGroupIds=io.camunda -DincludeArtifactIds=camunda-client-java \
@@ -248,7 +260,7 @@ jobs:
         run: |
           set -euo pipefail
           # '-Dverbose' prints the version each path asked for, which the plain tree drops
-          mvn --batch-mode --no-transfer-progress --quiet \
+          mvn -s .github/maven/settings.xml --batch-mode --no-transfer-progress --quiet \
             "-Pline-${LINE}" "-Drevision=0.9.0-${LINE}-SNAPSHOT" \
             -pl core dependency:tree -Dverbose \
             -Dincludes=com.google.protobuf:protobuf-java \

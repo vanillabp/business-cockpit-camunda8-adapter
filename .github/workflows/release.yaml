@@ -61,6 +61,11 @@ jobs:
   #
   # See decision 9 in the repository's DECISIONS.md.
   lines:
+    # the matrix reads the snapshots of the other VanillaBP repositories from GitHub
+    # Packages, see line-matrix.yaml. A called workflow gets no more than its caller allows
+    permissions:
+      contents: read
+      packages: read
     uses: ./.github/workflows/line-matrix.yaml
 
   # The gate itself. It runs whatever the matrix did, because this job and not the matrix
