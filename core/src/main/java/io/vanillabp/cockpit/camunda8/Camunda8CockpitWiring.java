@@ -190,8 +190,12 @@ public class Camunda8CockpitWiring implements ExtensionWiringService<BpmnModelIn
 
   /**
    * Adds what makes the cluster say what happened to a user task of this process, to every user
-   * task the cluster manages itself. A user task served by a job worker is none of this
-   * extension's business: VanillaBP delivers it like any other task.
+   * task the cluster manages itself. That is a Camunda user task (<code>zeebe:userTask</code>),
+   * and it is the only kind of user task this extension takes, like the Camunda 8 adapter. A user
+   * task which a job worker serves gets nothing here, also where it names a job type of its own.
+   * The adapter refuses such an element in a process the application claims, and it runs first,
+   * so the boot has ended before this method sees one. The cockpit does not refuse it a second
+   * time.
    * <p>
    * Which user tasks those are, and what each of them is called, is not decided here. The
    * adapter's own deployment path decides it, and
