@@ -8,7 +8,6 @@ import io.vanillabp.camunda8.Camunda8ProcessingContext;
 import io.vanillabp.camunda8.client.Camunda8ClientFactoryRegistry;
 import io.vanillabp.camunda8.deployment.Camunda8DeploymentService;
 import io.vanillabp.camunda8.observability.Camunda8Metrics;
-import io.vanillabp.camunda8.quarkus.runtime.VanillaBpCamunda8Properties;
 import io.vanillabp.cockpit.camunda8.Camunda8Clients;
 import io.vanillabp.cockpit.camunda8.Camunda8CockpitBridge;
 import io.vanillabp.cockpit.camunda8.Camunda8CockpitDeployments;
@@ -16,6 +15,7 @@ import io.vanillabp.cockpit.camunda8.Camunda8CockpitSettings;
 import io.vanillabp.cockpit.camunda8.Camunda8CockpitWiring;
 import io.vanillabp.cockpit.camunda8.Camunda8CockpitWorkers;
 import io.vanillabp.cockpit.camunda8.Camunda8SuspensionCheck;
+import io.vanillabp.cockpit.camunda8.Camunda8SuspensionCheckInterval;
 import io.vanillabp.cockpit.extension.spi.BusinessCockpitBpmsBridge;
 import io.vanillabp.cockpit.extension.spi.BusinessCockpitEventPublisher;
 import io.vanillabp.integration.adapter.migration.config.MigrationAdapterProperties;
@@ -83,24 +83,21 @@ public class Camunda8CockpitProducer {
   /**
    * Produces the settings of this extension. A wrong value of its own key ends the start here.
    *
-   * @param properties The Camunda 8 adapter's own configuration
    * @param overlay The key this extension reads itself
    * @param platform VanillaBP's resolved configuration, which names the configured Camunda 8
    *          adapters
-   * @return How long a listener job of this extension stays locked, and how often a cluster is
-   *         asked about suspended workflows
+   * @return How often a cluster is asked about suspended workflows
    */
   @Produces
   @Singleton
   @Unremovable
   public Camunda8CockpitSettings businessCockpitCamunda8Settings(
-      final VanillaBpCamunda8Properties properties,
       final Camunda8CockpitOverlayProperties overlay,
       final MigrationAdapterProperties platform) {
 
-    return new Camunda8QuarkusSettings(
-        properties, overlay.suspensionCheckIntervals(), platform
-            .adapterIdsOfType(Camunda8DeploymentService.ADAPTER_TYPE));
+    return Camunda8SuspensionCheckInterval
+        .settingsOf(overlay.suspensionCheckIntervals(),
+            platform.adapterIdsOfType(Camunda8DeploymentService.ADAPTER_TYPE));
 
   }
 
@@ -143,7 +140,6 @@ public class Camunda8CockpitProducer {
    *
    * @param clients The clusters
    * @param deployments What was wired
-   * @param settings The lock of a listener job
    * @param metrics Where the job counters of these workers go. The adapter produces this bean
    *          where the application brought the Micrometer extension, and an application without
    *          it counts nothing
@@ -157,12 +153,11 @@ public class Camunda8CockpitProducer {
   public Camunda8CockpitWorkers businessCockpitCamunda8Workers(
       final Camunda8Clients clients,
       final Camunda8CockpitDeployments deployments,
-      final Camunda8CockpitSettings settings,
       final Instance<Camunda8Metrics> metrics,
       final Instance<BusinessCockpitEventPublisher> publisher) {
 
     return new Camunda8CockpitWorkers(
-        clients, deployments, settings, metrics.isResolvable()
+        clients, deployments, metrics.isResolvable()
             ? metrics.get()
             : Camunda8Metrics.NONE, publisher::get);
 

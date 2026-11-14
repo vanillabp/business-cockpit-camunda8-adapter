@@ -100,7 +100,8 @@ reads back is documented for users in the
 The extension reads one configuration key of its own,
 `vanillabp.adapters.<id>.cockpit.suspension-check-interval`, see
 [A suspended workflow](#a-suspended-workflow). Everything else it needs comes from a key of the
-Camunda 8 adapter: the lock of its workers is the adapter's `job-timeout`, and line 8.8 waits for
+Camunda 8 adapter: the lock of its workers is the adapter's `job-timeout`, which the adapter's
+client factory resolves (`Camunda8ClientFactory#getJobTimeoutResolver`), and line 8.8 waits for
 the cluster as long as the adapter's `workflow-visibility-timeout` says. The Camunda 8 adapter's
 Spring Boot jar describes those keys, and the keys below `vanillabp.cockpit` belong to the
 cockpit's `extensions-commons`, and its Spring Boot jar describes them.
@@ -109,7 +110,10 @@ The one key of its own stands at the adapter id, because the check runs once per
 cannot stand below `vanillabp.cockpit`: `extensions-commons` reads that section and refuses a key
 it does not know there. Both platform modules bind the key as text, and the core reads it, so a
 wrong value gets the same message on both. A `cockpit` section at an adapter id of another type
-ends the start, because nobody would read it. The Spring Boot jar ships no configuration metadata
+ends the start, because nobody would read it. The core announces the key to `extensions-commons`
+(`Camunda8CockpitKeys`, named in `META-INF/services` of the core jar). So the neutral half refuses
+the key at a workflow module, a workflow or a task, and a typo of it, with a message which names
+the key at the adapter. This extension reads none of the Camunda 8 adapter's keys itself. The Spring Boot jar ships no configuration metadata
 for the key. The metadata format has no way to describe a key below a map entry such as an adapter
 id, so an IDE does not offer it. The wiki page about configuration describes it.
 
