@@ -9,8 +9,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.time.Duration;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -82,9 +80,7 @@ public class Camunda8CockpitWorkersShutdownTest {
             MODULE_ID,
             new WiredListener(LISTENER_TYPE, PROCESS_ID, PROCESS_ID, PROCESS_ID, null, null, "loanId"));
     workers = new Camunda8CockpitWorkers(
-        new Camunda8Clients(clientFactories, null), deployments, (
-            workflowModuleId,
-            adapterId) -> Duration.ofMinutes(5), Camunda8Metrics.NONE, () -> null);
+        new Camunda8Clients(clientFactories, null), deployments, Camunda8Metrics.NONE, () -> null);
 
   }
 

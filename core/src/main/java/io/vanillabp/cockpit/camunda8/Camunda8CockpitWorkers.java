@@ -1,5 +1,6 @@
 package io.vanillabp.cockpit.camunda8;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -63,8 +64,6 @@ public class Camunda8CockpitWorkers {
 
   private final Camunda8CockpitDeployments deployments;
 
-  private final Camunda8CockpitSettings settings;
-
   /**
    * Where the job counters of these workers go. An application without a metrics backend hands
    * in {@link Camunda8Metrics#NONE}, which measures nothing.
@@ -103,20 +102,17 @@ public class Camunda8CockpitWorkers {
    *
    * @param clients The clusters of the configured Camunda 8 adapters
    * @param deployments What this extension wired
-   * @param settings How long a listener job stays locked
    * @param metrics Where the job counters of these workers go
    * @param publisher Where an observed event is reported
    */
   public Camunda8CockpitWorkers(
       final Camunda8Clients clients,
       final Camunda8CockpitDeployments deployments,
-      final Camunda8CockpitSettings settings,
       final Camunda8Metrics metrics,
       final Supplier<BusinessCockpitEventPublisher> publisher) {
 
     this.clients = clients;
     this.deployments = deployments;
-    this.settings = settings;
     this.metrics = metrics;
     this.publisher = publisher;
 
@@ -173,6 +169,24 @@ public class Camunda8CockpitWorkers {
 
   }
 
+  /**
+   * How long a listener job of this extension stays locked: the adapter's own
+   * <code>job-timeout</code>, as the adapter resolves it. This extension adds no lock setting of
+   * its own, so a workflow module which raised the adapter's job timeout raised it for the
+   * cockpit's listeners as well. It is asked at the workflow module and not per workflow, because
+   * one worker serves a job type across every process which uses it.
+   */
+  private static Duration lockOfAListenerJob(
+      final Camunda8Clients.Cluster cluster,
+      final String workflowModuleId) {
+
+    return cluster
+        .factory()
+        .getJobTimeoutResolver()
+        .jobTimeoutFor(workflowModuleId, null, null);
+
+  }
+
   private JobWorker open(
       final Camunda8Clients.Cluster cluster,
       final String workflowModuleId,
@@ -188,7 +202,7 @@ public class Camunda8CockpitWorkers {
         .handler(
             new Camunda8CockpitJobHandler(
                 cluster, workflowModuleId, deployments, multiInstances, publisher))
-        .timeout(settings.listenerJobTimeout(workflowModuleId, cluster.scope().adapterId()))
+        .timeout(lockOfAListenerJob(cluster, workflowModuleId))
         .name("vanillabp-businesscockpit-%s-%s".formatted(cluster.scope().adapterId(), listenerType))
         .fetchVariables(variables);
     // the two things a worker cannot inherit from the client the adapter built, and therefore

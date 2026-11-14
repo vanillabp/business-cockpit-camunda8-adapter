@@ -12,13 +12,13 @@ import io.vanillabp.camunda8.Camunda8ProcessingContext;
 import io.vanillabp.camunda8.client.Camunda8ClientFactoryRegistry;
 import io.vanillabp.camunda8.deployment.Camunda8DeploymentService;
 import io.vanillabp.camunda8.observability.Camunda8Metrics;
-import io.vanillabp.camunda8.springboot.client.VanillaBpCamunda8Properties;
 import io.vanillabp.cockpit.camunda8.Camunda8Clients;
 import io.vanillabp.cockpit.camunda8.Camunda8CockpitDeployments;
 import io.vanillabp.cockpit.camunda8.Camunda8CockpitSettings;
 import io.vanillabp.cockpit.camunda8.Camunda8CockpitWiring;
 import io.vanillabp.cockpit.camunda8.Camunda8CockpitWorkers;
 import io.vanillabp.cockpit.camunda8.Camunda8SuspensionCheck;
+import io.vanillabp.cockpit.camunda8.Camunda8SuspensionCheckInterval;
 import io.vanillabp.cockpit.extension.spi.BusinessCockpitEventPublisher;
 import io.vanillabp.integration.adapter.migration.config.MigrationAdapterProperties;
 import io.vanillabp.integration.adapter.spi.NameClashAvoidanceSupport;
@@ -37,9 +37,7 @@ import io.vanillabp.integration.extension.spi.ExtensionWiringService;
  */
 @AutoConfiguration(afterName = "io.vanillabp.integration.processservice.SpringBootMigrationAdapterAutoConfiguration")
 @ConditionalOnBean(MigrationAdapterProperties.class)
-@EnableConfigurationProperties({
-    VanillaBpCamunda8Properties.class, Camunda8CockpitOverlayProperties.class
-})
+@EnableConfigurationProperties(Camunda8CockpitOverlayProperties.class)
 @Import(Camunda8CockpitBeanRegistrar.class)
 public class Camunda8CockpitAutoConfiguration {
 
@@ -81,23 +79,22 @@ public class Camunda8CockpitAutoConfiguration {
 
   /**
    * Registers the settings of this extension. A wrong value of its own key ends the start here.
+   * The lock of a listener job is not among them. The adapter's client factory answers it, see
+   * {@code Camunda8CockpitWorkers}.
    *
-   * @param properties The Camunda 8 adapter's own configuration
    * @param overlay The key this extension reads itself
    * @param platform VanillaBP's resolved configuration, which names the configured Camunda 8
    *          adapters
-   * @return How long a listener job of this extension stays locked, and how often a cluster is
-   *         asked about suspended workflows
+   * @return How often a cluster is asked about suspended workflows
    */
   @Bean
   public Camunda8CockpitSettings businessCockpitCamunda8Settings(
-      final VanillaBpCamunda8Properties properties,
       final Camunda8CockpitOverlayProperties overlay,
       final MigrationAdapterProperties platform) {
 
-    return new Camunda8SpringSettings(
-        properties, overlay.suspensionCheckIntervals(), platform
-            .adapterIdsOfType(Camunda8DeploymentService.ADAPTER_TYPE));
+    return Camunda8SuspensionCheckInterval
+        .settingsOf(overlay.suspensionCheckIntervals(),
+            platform.adapterIdsOfType(Camunda8DeploymentService.ADAPTER_TYPE));
 
   }
 
@@ -127,7 +124,6 @@ public class Camunda8CockpitAutoConfiguration {
    *
    * @param clients The clusters
    * @param deployments What was wired
-   * @param settings The lock of a listener job
    * @param metrics Where the job counters of these workers go. The adapter registers this bean
    *          where the application brought Micrometer, and an application without it counts
    *          nothing
@@ -139,12 +135,11 @@ public class Camunda8CockpitAutoConfiguration {
   public Camunda8CockpitWorkers businessCockpitCamunda8Workers(
       final Camunda8Clients clients,
       final Camunda8CockpitDeployments deployments,
-      final Camunda8CockpitSettings settings,
       final ObjectProvider<Camunda8Metrics> metrics,
       final ObjectProvider<BusinessCockpitEventPublisher> publisher) {
 
     return new Camunda8CockpitWorkers(
-        clients, deployments, settings, metrics.getIfAvailable(() -> Camunda8Metrics.NONE), publisher::getObject);
+        clients, deployments, metrics.getIfAvailable(() -> Camunda8Metrics.NONE), publisher::getObject);
 
   }
 

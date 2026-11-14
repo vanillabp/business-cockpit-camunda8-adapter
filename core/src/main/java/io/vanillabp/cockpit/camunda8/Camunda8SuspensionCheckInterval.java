@@ -34,7 +34,26 @@ public final class Camunda8SuspensionCheckInterval {
   public static String keyOf(
       final String adapterId) {
 
-    return "vanillabp.adapters.%s.cockpit.suspension-check-interval".formatted(adapterId);
+    return "vanillabp.adapters.%s.cockpit.%s".formatted(adapterId, Camunda8CockpitKeys.SUSPENSION_CHECK_INTERVAL);
+
+  }
+
+  /**
+   * The settings of this extension, read from what the application configured. Both platform
+   * modules bind the key and hand the raw text here.
+   *
+   * @param configured The raw value by adapter id, for every adapter id which carries the key
+   * @param camunda8AdapterIds The configured adapter ids of type <code>camunda8</code>
+   * @return How often each cluster is asked, {@link #DEFAULT} where nothing is configured
+   * @throws IllegalStateException Where a value is no span of time, is negative, or stands at an
+   *           adapter id which is no Camunda 8 adapter
+   */
+  public static Camunda8CockpitSettings settingsOf(
+      final Map<String, String> configured,
+      final Collection<String> camunda8AdapterIds) {
+
+    final var intervals = intervalsOf(configured, camunda8AdapterIds);
+    return adapterId -> intervals.getOrDefault(adapterId, DEFAULT);
 
   }
 

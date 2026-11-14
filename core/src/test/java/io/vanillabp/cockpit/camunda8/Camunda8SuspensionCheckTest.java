@@ -196,26 +196,7 @@ public class Camunda8SuspensionCheckTest {
             new WiredListener(
                 "listener", PROCESS_ID, PROCESS_ID, PROCESS_ID, "Cockpit process", "Cockpit process", AGGREGATE_ID_NAME));
     check = new Camunda8SuspensionCheck(
-        clients, deployments, new Camunda8CockpitSettings() {
-
-          @Override
-          public Duration listenerJobTimeout(
-              final String workflowModuleId,
-              final String adapterId) {
-
-            return Duration.ofMinutes(5);
-
-          }
-
-          @Override
-          public Duration suspensionCheckInterval(
-              final String adapterId) {
-
-            return interval;
-
-          }
-
-        }, () -> publisher, adapterId -> cluster, () -> NOW);
+        clients, deployments, adapterId -> interval, () -> publisher, adapterId -> cluster, () -> NOW);
     cluster.variables.put(INSTANCE, Map.of(AGGREGATE_ID_NAME, "4711"));
     cluster.tasks.add(new OpenUserTask(TASK, INSTANCE, null, PROCESS_ID, 3, "Approve", "approve"));
 

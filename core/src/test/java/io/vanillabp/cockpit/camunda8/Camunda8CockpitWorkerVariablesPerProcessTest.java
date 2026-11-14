@@ -7,7 +7,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.LinkedList;
 import java.util.List;
@@ -155,9 +154,7 @@ public class Camunda8CockpitWorkerVariablesPerProcessTest {
     when(sharedWorker.open()).thenReturn(mock(JobWorker.class));
 
     workers = new Camunda8CockpitWorkers(
-        new Camunda8Clients(clientFactories, null), deployments, (
-            workflowModuleId,
-            adapterId) -> Duration.ofMinutes(5), Camunda8Metrics.NONE, () -> application);
+        new Camunda8Clients(clientFactories, null), deployments, Camunda8Metrics.NONE, () -> application);
 
   }
 

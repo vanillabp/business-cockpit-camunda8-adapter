@@ -114,9 +114,25 @@ public class Camunda8CockpitWorkerOptionsTest {
             new WiredListener(LISTENER_TYPE, PROCESS_ID, PROCESS_ID, PROCESS_ID, null, null, "loanId"));
 
     workers = new Camunda8CockpitWorkers(
-        new Camunda8Clients(clientFactories, null), deployments, (
+        new Camunda8Clients(clientFactories, null), deployments, metrics, () -> null);
+
+  }
+
+  @Test
+  @DisplayName("A worker is locked for what the adapter resolves as job-timeout of the workflow module")
+  public void theLockIsWhatTheAdapterResolves() {
+
+    when(clientFactories.getFactory(ADAPTER_ID).getJobTimeoutResolver())
+        .thenReturn((
             workflowModuleId,
-            adapterId) -> Duration.ofMinutes(5), metrics, () -> null);
+            bpmnProcessId,
+            taskDefinition) -> MODULE_ID.equals(workflowModuleId) && (bpmnProcessId == null) && (taskDefinition == null)
+                ? Duration.ofMinutes(7)
+                : Duration.ofSeconds(1));
+
+    workers.open(ADAPTER_ID, MODULE_ID, new Camunda8MultiInstance.Registry());
+
+    verify(builder).timeout(Duration.ofMinutes(7));
 
   }
 
