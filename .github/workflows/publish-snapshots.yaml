@@ -30,6 +30,13 @@ name: Publish snapshots
 # 'packages: read'.
 env:
   VBP_SNAPSHOTS_FROM: "${{ vars.VANILLABP_SNAPSHOTS_FROM == 'github-packages' && 'github-packages' || 'central' }}"
+  # The settings file turns on its profile for GitHub Packages by VBP_SNAPSHOTS_FROM. Maven
+  # sees that, but a Quarkus test does not: it resolves the deployment artifacts of the
+  # extensions with a resolver of its own inside the test JVM, and that resolver takes the
+  # profiles from the Maven command line only. So every Maven call of this workflow also
+  # names the profile, by this variable. It is empty for 'central', which leaves the calls
+  # as they were.
+  VBP_SNAPSHOTS_PROFILE: "${{ vars.VANILLABP_SNAPSHOTS_FROM == 'github-packages' && '-Psnapshots-from-github-packages' || '' }}"
   VBP_PACKAGES_READ_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 concurrency:
   # One publish of this repository at a time, because snapshot artifacts share their
@@ -88,7 +95,7 @@ jobs:
         # the median 5.4, so 30 minutes is around four times the worst. A run which hangs
         # also blocks the next one, because this workflow allows one publish at a time.
         timeout-minutes: 30
-        run: mvn -s .github/maven/settings.xml --batch-mode --no-transfer-progress --update-snapshots install
+        run: mvn -s .github/maven/settings.xml ${VBP_SNAPSHOTS_PROFILE} --batch-mode --no-transfer-progress --update-snapshots install
       # The reports are already there: the step above runs the whole lifecycle up to
       # 'install', and JaCoCo writes both of them in 'verify'. So this step only copies them
       # under the names they get on the web. A name is the last part of the address the
@@ -189,7 +196,7 @@ jobs:
         # A compile and a deploy, no tests. 20 minutes is far more than that needs, and a
         # publish which hangs still ends before it blocks the next one for long.
         timeout-minutes: 20
-        run: mvn -s .github/maven/settings.xml --batch-mode --no-transfer-progress --update-snapshots
+        run: mvn -s .github/maven/settings.xml ${VBP_SNAPSHOTS_PROFILE} --batch-mode --no-transfer-progress --update-snapshots
           -Pline-${{ matrix.line }},publish-snapshots -Drevision=0.9.0-${{ matrix.line }}-SNAPSHOT
           -Dmaven.test.skip=true -DskipITs
           clean deploy
