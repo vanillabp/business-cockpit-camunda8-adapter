@@ -150,7 +150,7 @@ jobs:
       # See decision 35 in the repository's DECISIONS.md.
       - uses: actions/setup-java@v6
         with:
-          java-version: 25.0.5+8.0.LTS
+          java-version: 25.0.5+8
           distribution: temurin
       # The Maven repository of the lines, as in the blueprints. 'cache: maven' of setup-java
       # keys on the POMs alone and has no fallback, so every change to a POM started all
