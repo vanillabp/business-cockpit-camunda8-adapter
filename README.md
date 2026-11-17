@@ -264,10 +264,12 @@ failsafe both read. It is a property and not a setting inside a line profile, be
 without a profile is the current GA line and would otherwise run a test the line itself leaves
 out. No line leaves a test out today, and the property stays empty everywhere until one does.
 
-Snapshots carry the line as well: `0.9.0-8.8-SNAPSHOT`, `0.9.0-8.9-SNAPSHOT` and
-`0.9.0-8.10-SNAPSHOT`. So a project can try the line it will use before that line is released. A
-build without a profile produces the current GA line, `0.9.0-8.10-SNAPSHOT`. Line `<line>` reads
-the snapshot `2.0.0-<line>-SNAPSHOT` of the Camunda 8 adapter, which publishes one snapshot per
+A release carries its line, for example `1.0.0-8.8`, `1.0.0-8.9` and `1.0.0-8.10`. Snapshots carry
+the line as well: `<version>-8.8-SNAPSHOT`, `<version>-8.9-SNAPSHOT` and `<version>-8.10-SNAPSHOT`.
+`<version>` is the number the default `revision` in `pom.xml` starts with, so the snapshot of `main`
+always carries the version of the pom. A project can try the line it will use before that line is
+released. A build without a profile produces the current GA line, `<version>-8.10-SNAPSHOT`. Line
+`<line>` reads the snapshot `2.0.0-<line>-SNAPSHOT` of the Camunda 8 adapter, which publishes one snapshot per
 line too.
 
 ### How the lines are built
@@ -276,10 +278,10 @@ Every line is a build variant of this one source tree, not a maintenance branch.
 profile that selects the Camunda 8 adapter, and the adapter brings the client:
 
 ```bash
-mvn install                                          # current GA line, 0.9.0-8.10-SNAPSHOT
-mvn -Pline-8.8 -Drevision=0.9.0-8.8-SNAPSHOT clean install  # snapshot of the oldest line
-mvn -Pline-8.8 -Drevision=0.9.0-8.8 clean install    # a release of the oldest line
-mvn -Pline-8.9 -Drevision=0.9.0-8.9 clean install
+mvn install                                              # current GA line, <version>-8.10-SNAPSHOT
+mvn -Pline-8.8 -Drevision=<version>-8.8-SNAPSHOT clean install  # snapshot of the oldest line
+mvn -Pline-8.8 -Drevision=1.0.0-8.8 clean install        # release 1.0.0 of the oldest line
+mvn -Pline-8.9 -Drevision=1.0.0-8.9 clean install
 ```
 
 Every line reads the Camunda 8 adapter of its own line, `2.0.0-<line>-SNAPSHOT`, see
@@ -302,7 +304,7 @@ properties, no profiles. A property would be no help in it. An application activ
 profiles, so a published POM still naming `${camunda8.version}` reads the default of the file,
 which is the current GA line, on every line. That is what every line did until 2026-09-20. Nobody
 had looked, because the source POM reads right and a build of a line uses the source POM. The
-installed POM of `0.9.0-8.8-SNAPSHOT` named `io.camunda:camunda-client-java` with no version at
+installed POM of the 8.8 snapshot named `io.camunda:camunda-client-java` with no version at
 all and kept its parent, and that parent said `${camunda8.version.line-8.9}`. An application on
 the 8.8 line would have been handed the 8.9 client. A build fits the cluster of the client it was
 compiled against, so the line promised a cluster and then took it away. No line is
@@ -435,8 +437,8 @@ Maven broke, and otherwise the last lines of the step which broke first. The Cam
 ### Version ordering, and why Renovate does not use maven versioning
 
 Maven orders the suffix as an addition rather than as a pre-release, and that is what makes the
-suffix usable at all: `0.9.0-8.8 > 0.9.0`, and `0.9.0-8.9 < 0.9.0-8.10` numerically rather than
-lexically. One comparison goes wrong, and it is the whole risk of a suffix: `0.9.0-8.9 < 0.10.0-8.8`, so "the
+suffix usable at all: `1.0.0-8.8 > 1.0.0`, and `1.0.0-8.9 < 1.0.0-8.10` numerically rather than
+lexically. One comparison goes wrong, and it is the whole risk of a suffix: `1.0.0-8.9 < 1.1.0-8.8`, so "the
 newest version" can cross a line boundary. Renovate reads the suffix as a compatibility value
 instead of a version part, which fixes exactly that. Extend the preset shipped here to inherit it
 in your own application:
@@ -447,9 +449,9 @@ in your own application:
 }
 ```
 
-A pre-release of a preview line is `0.9.0-8.11-alpha1`: the qualifier comes after the line, so the
-line always sits in the same place, and Maven sorts `0.9.0-8.11-alpha1 < 0.9.0-8.11-alpha2 <
-0.9.0-8.11`.
+A pre-release of a preview line is `1.0.0-8.11-alpha1`: the qualifier comes after the line, so the
+line always sits in the same place, and Maven sorts `1.0.0-8.11-alpha1 < 1.0.0-8.11-alpha2 <
+1.0.0-8.11`.
 
 ## Building
 
@@ -528,7 +530,7 @@ nothing, and it is there because a client patch which merges itself looks like e
 request.
 `line-matrix.yaml` builds and tests every line, once a night and once per pull request, and it is
 what the section [Release lines](#release-lines) is proven by.
-`publish-snapshots.yaml` publishes one snapshot per line, `0.9.0-<line>-SNAPSHOT`, and only for a
+`publish-snapshots.yaml` publishes one snapshot per line, `<version>-<line>-SNAPSHOT`, and only for a
 push to `main`. It reads the lines out of the `line-*` profiles, like the matrix. The jobs which
 publish skip the tests, because the pull request and the nightly matrix test every line, and they
 still compile every line against the adapter of that line. They run one after the other. See

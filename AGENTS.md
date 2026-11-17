@@ -36,8 +36,8 @@ mvn -Pline-8.8 -Drevision=2.0.0-8.8-SNAPSHOT -Dmaven.test.skip=true \
   -pl core,spring-boot,quarkus/runtime,quarkus/deployment,test-support -am \
   clean install
 
-# here
-mvn -Pline-8.8 -Drevision=0.9.0-8.8-SNAPSHOT clean install
+# here, <version> is the number the default revision in pom.xml starts with
+mvn -Pline-8.8 -Drevision=<version>-8.8-SNAPSHOT clean install
 ```
 
 The profile of the line is not optional in the adapter's build. The adapter keeps the code that
