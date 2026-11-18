@@ -782,7 +782,7 @@ public class Camunda8CockpitTest {
     final var scopedProcessId = "%s__%s".formatted(MODULE_ID, UNCLAIMED_PROCESS_ID);
     final var model = deployedModelOf(scopedProcessId);
 
-    // a listener of this extension has no retries, so a job which nobody serves would stop the
+    // a listener job which nobody serves would stop the
     // workflow where it is. The line 'implemented-externally' lets the start go on, but it does
     // not make anybody here serve the process
     assertEquals(List.of(), executionListenerTypesOf(model, scopedProcessId));

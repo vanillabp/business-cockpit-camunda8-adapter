@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
@@ -650,6 +651,25 @@ public class Camunda8CockpitJobHandlerTest {
 
     assertTrue(publisher.userTaskEvents().isEmpty());
     verify(client.newFailCommand(anyLong()), never()).retries(0);
+
+  }
+
+  @Test
+  @DisplayName("A failed report is not repeated by the cluster, although the model keeps a retry for a lost delivery")
+  public void aFailedReportIsNotRepeatedByTheCluster() {
+
+    // the job comes with the retry the model gives it. That retry is only for a delivery the
+    // gateway lost, so a report which failed must not use it
+    final var job = aUserTaskJob(ListenerEventType.CREATING);
+    when(job.getRetries()).thenReturn(Integer.parseInt(Camunda8CockpitListeners.RETRIES));
+    when(job.getVariablesAsMap()).thenReturn(Map.of());
+
+    handler.handle(client, job);
+
+    assertTrue(publisher.userTaskEvents().isEmpty());
+    verify(client.newFailCommand(88L)).retries(0);
+    verify(client.newFailCommand(88L), never()).retries(1);
+    verify(client.newFailCommand(88L).retries(0), never()).retryBackoff(any());
 
   }
 

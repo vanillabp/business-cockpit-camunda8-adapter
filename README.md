@@ -25,9 +25,11 @@ The Version 1 adapter is still where it always was, as `adapters/camunda8` of th
 [business-cockpit](https://github.com/vanillabp/business-cockpit) repository, and it stays there
 until the cockpit switches to VanillaBP 2. Nothing of it was moved here: this repository starts from
 the extension, so its history never carries the Version 1 shape. What it does carry is Version 1's
-task listeners, byte for byte, because an application which upgrades has to keep the process version
-its workflows are running on ([decision 4](./DECISIONS.md)). The start events are the one deliberate
-difference, and [decision 1](./DECISIONS.md) says why.
+task listeners, byte for byte except for their retries, because an application which upgrades has to
+keep the process version its workflows are running on ([decision 4](./DECISIONS.md)). The retries
+changed together with VanillaBP's own listeners, so they cost no version of their own
+([decision 5](./DECISIONS.md)). The start events are the one deliberate difference, and
+[decision 1](./DECISIONS.md) says why.
 
 ## What is here today
 

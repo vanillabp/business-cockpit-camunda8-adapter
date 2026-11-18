@@ -126,6 +126,15 @@ the version they were started on and keep reporting their user tasks, because th
 that version are the ones this extension serves anyway. The documentation says this out loud rather
 than hiding it. It is the price of reporting a workflow which knows what it is about.
 
+**Addition of 2026-11-18, story 1538.** The retries of the task listeners are no longer the ones
+Version 1 wrote. They carry one retry now, see the addition to decision 5. Their type and where they
+are inserted are still the Version 1 ones. This costs no process version of its own. VanillaBP's
+Camunda 8 adapter writes its own listeners beside them, and Version 1 wrote those with zero retries
+as well. The adapter gives them one retry now, for the same reason, so a model of Version 1 becomes
+a new version on the upgrade anyway. Workflows which run on an older version keep the zero retries
+of that version, and the same worker serves them. `Camunda8CockpitListenersTest` still compares the
+task listeners with the Version 1 code. It compares everything but the retries.
+
 ## 5. A listener of this extension carries no retries - extended by decision 25
 
 A report which cannot be written is a defect somebody has to see, and an incident is how a cluster
@@ -135,6 +144,24 @@ So the listeners carry zero retries, and a failing job raises an incident at onc
 The same rule decides where listeners are NOT added. A BPMN process which no workflow aggregate of
 the application claims gets none. The jobs of such listeners would be handed to nobody, and they
 would stop that workflow where it sits.
+
+**Addition of 2026-11-18, story 1538.** The listeners carry `retries="1"` now, and a report which
+fails still raises an incident at once. The two numbers answer different questions. The number in
+the model is what a gateway hands back when it could not deliver an activated job. It fails such a
+job back to the cluster with the retries the job had. With zero there is nothing to hand back, so
+the job dies before any handler ran, the cluster raises an incident, and a user task stays in
+`CREATING`. VanillaBP's Camunda 8 adapter measured this on its own listeners (decision 27 there) and
+writes them with one retry for that reason. This extension uses the same rule for its own listeners.
+
+The number at the failure is what the handler passes when a report really failed. That is still
+none: `Camunda8CockpitJobHandler` fails the job with `Camunda8ListenerJobs.Failure.NO_RETRIES_LEFT`
+of the adapter, whatever the model says. So the cluster never repeats a report on its own, and the
+first failure is the incident. Where decisions 8 and 11 speak of zero retries, they mean this
+number. The lost delivery has never been seen with the cockpit's listeners. It is fixed anyway,
+because its cause is in the cluster, and the adapter has run into it.
+
+`Camunda8CockpitListenersTest#everyListenerCarriesOneRetryForALostDelivery` and
+`Camunda8CockpitJobHandlerTest#aFailedReportIsNotRepeatedByTheCluster` hold both numbers.
 
 ## 6. The adapter says whose call this is, so nothing is guessed from a model
 
@@ -1480,3 +1507,49 @@ applies to every build, on a laptop and in a pull request as well, and that is m
 
 A developer who opens a class of a snapshot in the IDE sees decompiled code. A released version
 has sources and javadoc.
+
+## 39. A user task which a migration creates is reported once the modification after it runs
+
+Proposed by story 1859 on 2026-11-18. It follows decision 102 of the VanillaBP Camunda 8 adapter.
+
+**Why.** The Camunda 8 adapter no longer accepts a user task which a job worker serves. For a
+version the cluster already holds, its decision 102 names a way out: migrate the process instance
+in Operate to a version with a Camunda user task (`zeebe:userTask`), and then modify the instance.
+The migration creates the Camunda user task without running its `creating` listeners. The cockpit's
+`creating` listener is one of them, so the question was whether the cockpit ever hears of that task.
+
+**What was measured.** Against `camunda/camunda:8.10.9` with H2 on 2026-11-18, through the REST API
+and without an application. Version 1 of a process had a user task without `zeebe:userTask`.
+Version 2 had a Camunda user task with VanillaBP's listeners and the cockpit's listeners, the way
+both write them. One instance stood at the user task of version 1.
+
+|                  Step                   |                                    What the cluster did                                    |
+|-----------------------------------------|--------------------------------------------------------------------------------------------|
+| Before the migration                    | one job of type `io.camunda.zeebe:userTask`                                                |
+| Migration to version 2, element mapped  | accepted, the Camunda user task exists in state `CREATED`                                  |
+| The 20 seconds after the migration      | no listener job at all, neither VanillaBP's nor the cockpit's                              |
+| Modification: cancel the token, add one | accepted                                                                                   |
+| The migrated user task                  | `CANCELED`, and no `canceling` listener ran, neither VanillaBP's nor the cockpit's         |
+| The user task the modification created  | `CREATED`, VanillaBP's `creating` listener ran, then the cockpit's `creating` listener ran |
+
+**What holds.**
+
+- Nothing new is built for this. The cockpit's listeners are part of the version the instance is
+  migrated to, so the user task which the modification creates is reported like every other task.
+  The second step which the adapter's warning names is therefore also the step which brings the
+  task to the cockpit.
+- Between the migration and the modification, the cockpit knows nothing about the task, and
+  neither does VanillaBP. The bridge's existing search still finds it.
+  `Camunda8CockpitBridge#userTasksOfAggregate` reads every user task of the aggregate in state
+  `CREATED` from the searchable storage, whoever reported it. The Business Cockpit extension asks
+  it when the application reports a change of the aggregate without naming a task and VanillaBP
+  knows no open task of it. The cockpit takes an update of a task it does not know as a new task.
+- This extension does not search for such tasks on its own, for example once an hour like the
+  suspension check of decision 36. The modification ends the migrated task without a `canceling`
+  listener. A task which such a search reported would stay open in the cockpit after the second
+  step, and that is worse than a task shown one step late.
+- The adapter's warning about held versions should say that the Business Cockpit does not show the
+  task either until the modification ran. That text belongs to the Camunda 8 adapter.
+
+**Where it is referenced.** `GAPS.md`, gap 7, and the wiki, `Home.md` section "A workflow moved off
+a user task a job worker serves".
