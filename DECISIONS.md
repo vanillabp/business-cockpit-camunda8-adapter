@@ -1507,3 +1507,49 @@ applies to every build, on a laptop and in a pull request as well, and that is m
 
 A developer who opens a class of a snapshot in the IDE sees decompiled code. A released version
 has sources and javadoc.
+
+## 39. A user task which a migration creates is reported once the modification after it runs
+
+Proposed by story 1859 on 2026-11-18. It follows decision 102 of the VanillaBP Camunda 8 adapter.
+
+**Why.** The Camunda 8 adapter no longer accepts a user task which a job worker serves. For a
+version the cluster already holds, its decision 102 names a way out: migrate the process instance
+in Operate to a version with a Camunda user task (`zeebe:userTask`), and then modify the instance.
+The migration creates the Camunda user task without running its `creating` listeners. The cockpit's
+`creating` listener is one of them, so the question was whether the cockpit ever hears of that task.
+
+**What was measured.** Against `camunda/camunda:8.10.9` with H2 on 2026-11-18, through the REST API
+and without an application. Version 1 of a process had a user task without `zeebe:userTask`.
+Version 2 had a Camunda user task with VanillaBP's listeners and the cockpit's listeners, the way
+both write them. One instance stood at the user task of version 1.
+
+|                  Step                   |                                    What the cluster did                                    |
+|-----------------------------------------|--------------------------------------------------------------------------------------------|
+| Before the migration                    | one job of type `io.camunda.zeebe:userTask`                                                |
+| Migration to version 2, element mapped  | accepted, the Camunda user task exists in state `CREATED`                                  |
+| The 20 seconds after the migration      | no listener job at all, neither VanillaBP's nor the cockpit's                              |
+| Modification: cancel the token, add one | accepted                                                                                   |
+| The migrated user task                  | `CANCELED`, and no `canceling` listener ran, neither VanillaBP's nor the cockpit's         |
+| The user task the modification created  | `CREATED`, VanillaBP's `creating` listener ran, then the cockpit's `creating` listener ran |
+
+**What holds.**
+
+- Nothing new is built for this. The cockpit's listeners are part of the version the instance is
+  migrated to, so the user task which the modification creates is reported like every other task.
+  The second step which the adapter's warning names is therefore also the step which brings the
+  task to the cockpit.
+- Between the migration and the modification, the cockpit knows nothing about the task, and
+  neither does VanillaBP. The bridge's existing search still finds it.
+  `Camunda8CockpitBridge#userTasksOfAggregate` reads every user task of the aggregate in state
+  `CREATED` from the searchable storage, whoever reported it. The Business Cockpit extension asks
+  it when the application reports a change of the aggregate without naming a task and VanillaBP
+  knows no open task of it. The cockpit takes an update of a task it does not know as a new task.
+- This extension does not search for such tasks on its own, for example once an hour like the
+  suspension check of decision 36. The modification ends the migrated task without a `canceling`
+  listener. A task which such a search reported would stay open in the cockpit after the second
+  step, and that is worse than a task shown one step late.
+- The adapter's warning about held versions should say that the Business Cockpit does not show the
+  task either until the modification ran. That text belongs to the Camunda 8 adapter.
+
+**Where it is referenced.** `GAPS.md`, gap 7, and the wiki, `Home.md` section "A workflow moved off
+a user task a job worker serves".

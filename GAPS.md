@@ -159,3 +159,26 @@ entry it names nobody as `suspendedBy`.
 
 **What would close it** is a listener or a job of the cluster on a suspension and a resumption. Until
 then this adapter asks the cluster, see the section "A suspended workflow" of the README.
+
+## 7. A migration and a modification change user tasks without a listener
+
+**The cockpit needs** to hear of every user task which is created or ended, so that its task list
+holds exactly the tasks somebody can work on.
+
+**Camunda 8 offers** listeners on the creation and the end of a user task, but not on every way a
+task comes or goes. A process instance migration which turns a user task a job worker serves into a
+Camunda user task creates that task without running its `creating` listeners. A process instance
+modification which cancels the token of a user task ends that task without running its `canceling`
+listeners. The searchable storage shows both changes.
+
+**Where it can be read:** measured against `camunda/camunda:8.10.9` on 2026-11-18, see decision 39
+in the repository's DECISIONS.md. The VanillaBP Camunda 8 adapter measured the migration half on
+2026-11-13 (its decision 102).
+
+**What it costs** a user who follows the adapter's way out of a held version with job-worker user
+tasks: between the migration and the modification, the cockpit shows no task for that workflow.
+The modification creates a new task, and the cockpit reports that one. A task which the cockpit took
+from the bridge's search in between would stay open in the cockpit after the modification.
+
+**What would close it** is a cluster which runs the listeners of a user task on a migration and on a
+modification as well.
