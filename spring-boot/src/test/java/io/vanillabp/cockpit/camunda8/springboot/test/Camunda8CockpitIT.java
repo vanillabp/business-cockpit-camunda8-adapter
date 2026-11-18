@@ -1429,7 +1429,7 @@ public class Camunda8CockpitIT {
     CockpitServer.awaitRequest("/workflow/created", "\"customer\":\"Cassandra\"");
     final var workflowId = workflowIdOf(WaitingWorkflowService.BPMN_PROCESS_ID, aggregate.getId());
 
-    // what a cancel listener with no retries costs the instance it runs in is nowhere in
+    // what a failed cancel listener costs the instance it runs in is nowhere in
     // Camunda's documentation, so it is measured here. See decision 11 in the repository's
     // DECISIONS.md
     waitingWorkflowService.theDetailsProviderFails(true);
@@ -1497,8 +1497,8 @@ public class Camunda8CockpitIT {
           () -> "the cluster to refuse the answer of the run whose lock had expired. The log so far: "
               + logOf(output));
 
-      // the one thing which must not happen: the refused answer turns into a failure. The
-      // listeners of this extension have no retries, so a failure IS the incident. It would be an
+      // the one thing which must not happen: the refused answer turns into a failure. A job of
+      // this extension is failed with no retries left, so a failure IS the incident. It would be an
       // incident about a report which was written and is fine. See decision 13 in the
       // repository's DECISIONS.md
       assertFalse(
@@ -2007,7 +2007,7 @@ public class Camunda8CockpitIT {
         });
 
     // the report is built inside the listener job of the user task, so a details provider which
-    // throws fails that job. The listeners of this extension have no retries, so the cluster
+    // throws fails that job with no retries left, so the cluster
     // raises the incident at once instead of retrying quietly. This path only reads, but what it
     // reads has to be right. See decision 8 in the repository's DECISIONS.md
     final var workflowId = workflowIdOf(

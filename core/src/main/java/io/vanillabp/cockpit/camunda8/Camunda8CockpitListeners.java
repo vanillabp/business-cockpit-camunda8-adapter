@@ -26,14 +26,16 @@ import io.vanillabp.camunda8.wiring.Camunda8CancelListeners;
  * A Camunda 8 cluster tells nobody what it is doing unless it is asked to. So the only way to
  * watch a workflow is to have the cluster hand out a job whenever something happens. Each of
  * these listeners is such a job. It is delivered to a worker of this extension, it gates the
- * transition it belongs to until that worker answers, and it carries no retries. See decision 5
- * in the repository's DECISIONS.md.
+ * transition it belongs to until that worker answers. It carries one retry, and that retry is
+ * only for a delivery the gateway lost. A report which failed is not tried again by the cluster.
+ * See decision 5 in the repository's DECISIONS.md.
  * <p>
- * The task listeners are byte-for-byte what Version 1 wrote. Their job type, their retries and
- * where they are inserted are a compatibility promise rather than a choice. A Version 1
- * application whose model is deployed again by Version 2 must produce the same bytes. Otherwise
- * the cluster stores a new process version and every running workflow keeps the old one. See
- * decision 4 in the repository's DECISIONS.md. The execution listeners are NOT the Version 1
+ * The task listeners are what Version 1 wrote, except for their retries. Their job type and
+ * where they are inserted are a compatibility promise rather than a choice. Version 1 wrote no
+ * retries, and so did VanillaBP's own listeners beside them. VanillaBP's Camunda 8 adapter now
+ * writes one retry into its own listeners, so a model of Version 1 becomes a new process version
+ * anyway. The retry of this extension costs no further version. See decision 4 in the
+ * repository's DECISIONS.md. The execution listeners are NOT the Version 1
  * ones, and decision 1 in the repository's DECISIONS.md says why. On 8.10 the process carries a
  * second execution listener, which changes those bytes once more. Decision 11 in the repository's
  * DECISIONS.md says what that costs.
@@ -52,12 +54,21 @@ public final class Camunda8CockpitListeners {
   public static final String LISTENER_TYPE_PREFIX = "io.vanillabp.businesscockpit:";
 
   /**
-   * What the listeners are given as their retries. A report to the cockpit is not business work
-   * the cluster may repeat on its own. A failure is an incident somebody has to look at, and the
-   * entry which carries the report is retried by the outbox rather than by the cluster. See
-   * decision 5 in the repository's DECISIONS.md.
+   * What the listeners are given as their retries: one attempt, kept for a delivery the gateway
+   * lost.
+   * <p>
+   * Sometimes a gateway cannot hand an activated job to the request it was activated for. Then
+   * it fails the job back to the cluster with the retries the job had. A job modelled with none
+   * has nothing to be failed back with. It becomes an incident before any handler ran, and a
+   * user task stays in <code>CREATING</code>. With one retry the job is handed out again.
+   * <p>
+   * This retry does not repeat a report which failed. A report to the cockpit is not business
+   * work the cluster may repeat on its own. The handler fails such a job with no retries left,
+   * whatever the model says, so the failure is an incident somebody has to look at. The entry
+   * which carries the report is retried by the outbox rather than by the cluster. See decision 5
+   * in the repository's DECISIONS.md.
    */
-  public static final String RETRIES = "0";
+  public static final String RETRIES = "1";
 
   private Camunda8CockpitListeners() {
   }

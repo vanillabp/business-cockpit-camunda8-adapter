@@ -129,8 +129,9 @@ public class Camunda8CockpitJobHandler implements JobHandler {
             LISTENER_KIND,
             Camunda8CockpitListeners.identifierOf(job.getType()),
             job.getBpmnProcessId(),
-            // the listeners of this extension are modelled with no retry at all, so failing
-            // one raises the incident straight away. See decision 5 in the repository's
+            // the one retry in the model is kept for a delivery the gateway lost. A report
+            // which failed is failed with no retries left, so it raises the incident straight
+            // away and the cluster does not repeat it. See decision 5 in the repository's
             // DECISIONS.md
             () -> Camunda8ListenerJobs.Failure.NO_RETRIES_LEFT,
             () -> {

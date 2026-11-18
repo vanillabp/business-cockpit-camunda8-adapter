@@ -33,9 +33,11 @@ import io.vanillabp.integration.test.utils.SuppressOutputExtension;
  * What the Business Cockpit writes into a Camunda 8 model.
  * <p>
  * The user-task half of it is a compatibility promise. So it is measured against the code of
- * Version 1 itself, not against a description of it. The two have to produce the same bytes. An
- * upgrading application which deploys different bytes gets a new process version, and its
- * running workflows stay behind on the old one.
+ * Version 1 itself, not against a description of it. The two have to produce the same bytes,
+ * except for the retries. Version 1 wrote none, and this extension writes one, which is kept for
+ * a delivery the gateway lost. VanillaBP's own listeners changed their retries the same way, so a
+ * model of Version 1 becomes a new process version anyway. See decisions 4 and 5 in the
+ * repository's DECISIONS.md.
  */
 @ExtendWith(SuppressOutputExtension.class)
 public class Camunda8CockpitListenersTest {
@@ -101,6 +103,22 @@ public class Camunda8CockpitListenersTest {
 
   }
 
+  /**
+   * Gives the cockpit's listeners of a model which the Version 1 code wired the retries this
+   * extension writes. That is the one place where the two are allowed to differ.
+   */
+  private static BpmnModelInstance withTheRetriesOfThisExtension(
+      final BpmnModelInstance wiredByVersion1) {
+
+    final var cockpit = Camunda8CockpitListeners.listenerTypeOf(FORM_REFERENCE);
+    taskListenersOf(wiredByVersion1)
+        .stream()
+        .filter(listener -> cockpit.equals(listener.getType()))
+        .forEach(listener -> listener.setRetries(Camunda8CockpitListeners.RETRIES));
+    return wiredByVersion1;
+
+  }
+
   private static void addCockpitTaskListeners(
       final BpmnModelInstance model) {
 
@@ -124,7 +142,7 @@ public class Camunda8CockpitListenersTest {
    * pinned separately by {@link #aTaskWithoutAContainerGetsTheOrderThisExtensionDocuments()}.
    */
   @Test
-  @DisplayName("The task listeners are byte-identical to the ones Version 1 wrote")
+  @DisplayName("The task listeners are byte-identical to the ones Version 1 wrote, except for their retries")
   public void taskListenersAreByteIdenticalToVersion1() {
 
     final var extensions = """
@@ -139,13 +157,13 @@ public class Camunda8CockpitListenersTest {
     addCockpitTaskListeners(wiredByTheExtension);
 
     assertEquals(
-        Bpmn.convertToString(wiredByVersion1),
+        Bpmn.convertToString(withTheRetriesOfThisExtension(wiredByVersion1)),
         Bpmn.convertToString(wiredByTheExtension));
 
   }
 
   @Test
-  @DisplayName("A model carrying the modeller's own listeners is byte-identical to Version 1 as well")
+  @DisplayName("A model carrying the modeller's own listeners is byte-identical to Version 1 as well, except for the retries")
   public void taskListenersOfAModelWithCustomListenersMatchVersion1() {
 
     final var extensions = """
@@ -164,7 +182,7 @@ public class Camunda8CockpitListenersTest {
     addCockpitTaskListeners(wiredByTheExtension);
 
     assertEquals(
-        Bpmn.convertToString(wiredByVersion1),
+        Bpmn.convertToString(withTheRetriesOfThisExtension(wiredByVersion1)),
         Bpmn.convertToString(wiredByTheExtension));
 
   }
@@ -264,8 +282,8 @@ public class Camunda8CockpitListenersTest {
   }
 
   @Test
-  @DisplayName("Every listener of this extension carries no retries, so a failure is an incident")
-  public void everyListenerCarriesNoRetries() {
+  @DisplayName("Every listener of this extension carries one retry, kept for a delivery the gateway lost")
+  public void everyListenerCarriesOneRetryForALostDelivery() {
 
     final var bpmn = aModelVanillaBpWired("""
         <zeebe:userTask />
@@ -282,11 +300,11 @@ public class Camunda8CockpitListenersTest {
     taskListenersOf(bpmn)
         .stream()
         .filter(listener -> cockpit.equals(listener.getType()))
-        .forEach(listener -> assertEquals("0", listener.getRetries()));
+        .forEach(listener -> assertEquals("1", listener.getRetries()));
     executionListenersOf(bpmn, PROCESS_ID)
-        .forEach(listener -> assertEquals("0", listener.getRetries()));
+        .forEach(listener -> assertEquals("1", listener.getRetries()));
     executionListenersOf(bpmn, "Started")
-        .forEach(listener -> assertEquals("0", listener.getRetries()));
+        .forEach(listener -> assertEquals("1", listener.getRetries()));
 
   }
 
@@ -347,8 +365,9 @@ public class Camunda8CockpitListenersTest {
         Bpmn.convertToString(bpmn).contains("eventType=\"cancel\""),
         Bpmn.convertToString(bpmn));
     atTheProcess.forEach(listener -> assertEquals(workflowType, listener.getType()));
-    // a cancel listener is an incident like every other report which cannot be written
-    atTheProcess.forEach(listener -> assertEquals("0", listener.getRetries()));
+    // a cancel listener keeps a retry for a lost delivery like every other listener of this
+    // extension, and a report which cannot be written is an incident all the same
+    atTheProcess.forEach(listener -> assertEquals("1", listener.getRetries()));
 
     // a start event never gets one: the cluster takes the construct on the process element and
     // refuses it anywhere else

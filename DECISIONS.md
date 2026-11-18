@@ -126,6 +126,15 @@ the version they were started on and keep reporting their user tasks, because th
 that version are the ones this extension serves anyway. The documentation says this out loud rather
 than hiding it. It is the price of reporting a workflow which knows what it is about.
 
+**Addition of 2026-11-18, story 1538.** The retries of the task listeners are no longer the ones
+Version 1 wrote. They carry one retry now, see the addition to decision 5. Their type and where they
+are inserted are still the Version 1 ones. This costs no process version of its own. VanillaBP's
+Camunda 8 adapter writes its own listeners beside them, and Version 1 wrote those with zero retries
+as well. The adapter gives them one retry now, for the same reason, so a model of Version 1 becomes
+a new version on the upgrade anyway. Workflows which run on an older version keep the zero retries
+of that version, and the same worker serves them. `Camunda8CockpitListenersTest` still compares the
+task listeners with the Version 1 code. It compares everything but the retries.
+
 ## 5. A listener of this extension carries no retries - extended by decision 25
 
 A report which cannot be written is a defect somebody has to see, and an incident is how a cluster
@@ -135,6 +144,24 @@ So the listeners carry zero retries, and a failing job raises an incident at onc
 The same rule decides where listeners are NOT added. A BPMN process which no workflow aggregate of
 the application claims gets none. The jobs of such listeners would be handed to nobody, and they
 would stop that workflow where it sits.
+
+**Addition of 2026-11-18, story 1538.** The listeners carry `retries="1"` now, and a report which
+fails still raises an incident at once. The two numbers answer different questions. The number in
+the model is what a gateway hands back when it could not deliver an activated job. It fails such a
+job back to the cluster with the retries the job had. With zero there is nothing to hand back, so
+the job dies before any handler ran, the cluster raises an incident, and a user task stays in
+`CREATING`. VanillaBP's Camunda 8 adapter measured this on its own listeners (decision 27 there) and
+writes them with one retry for that reason. This extension uses the same rule for its own listeners.
+
+The number at the failure is what the handler passes when a report really failed. That is still
+none: `Camunda8CockpitJobHandler` fails the job with `Camunda8ListenerJobs.Failure.NO_RETRIES_LEFT`
+of the adapter, whatever the model says. So the cluster never repeats a report on its own, and the
+first failure is the incident. Where decisions 8 and 11 speak of zero retries, they mean this
+number. The lost delivery has never been seen with the cockpit's listeners. It is fixed anyway,
+because its cause is in the cluster, and the adapter has run into it.
+
+`Camunda8CockpitListenersTest#everyListenerCarriesOneRetryForALostDelivery` and
+`Camunda8CockpitJobHandlerTest#aFailedReportIsNotRepeatedByTheCluster` hold both numbers.
 
 ## 6. The adapter says whose call this is, so nothing is guessed from a model
 

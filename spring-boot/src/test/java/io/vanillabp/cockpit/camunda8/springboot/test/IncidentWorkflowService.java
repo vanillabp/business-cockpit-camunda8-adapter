@@ -15,8 +15,8 @@ import io.vanillabp.spi.service.WorkflowService;
  * A workflow whose details provider always fails.
  * <p>
  * The cockpit builds its report at the moment of the event. On Camunda 8 that is inside the
- * listener job of the task. So a provider which throws fails that job. A listener of this
- * extension has no retries, so the cluster raises an incident, and the transition waits for
+ * listener job of the task. So a provider which throws fails that job, with no retries left.
+ * So the cluster raises an incident, and the transition waits for
  * somebody to look at it. This is intended. This path only reads, but what it reads has to be
  * right, and nobody fixes a defect which retries hide. See decision 8 in the repository's
  * DECISIONS.md.
