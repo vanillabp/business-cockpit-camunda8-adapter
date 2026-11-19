@@ -152,6 +152,8 @@ job back to the cluster with the retries the job had. With zero there is nothing
 the job dies before any handler ran, the cluster raises an incident, and a user task stays in
 `CREATING`. VanillaBP's Camunda 8 adapter measured this on its own listeners (decision 27 there) and
 writes them with one retry for that reason. This extension uses the same rule for its own listeners.
+Camunda has the lost delivery as SUPPORT-35534 (2026-11-19). Once an undelivered job comes back
+without touching its retries, the listeners of this extension go back to zero as well.
 
 The number at the failure is what the handler passes when a report really failed. That is still
 none: `Camunda8CockpitJobHandler` fails the job with `Camunda8ListenerJobs.Failure.NO_RETRIES_LEFT`
