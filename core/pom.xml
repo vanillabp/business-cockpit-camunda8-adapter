@@ -57,10 +57,12 @@
       <artifactId>vanillabp-extension-spi</artifactId>
     </dependency>
     <dependency>
-      <!-- arrives transitively as well; declared because this module reads two of its types:
-           the name-clash avoidance a workflow module was deployed under, and the registry
-           which names the variable a BPMN process carries the workflow aggregate's id in.
-           Nothing here implements it - that is a BPMS adapter's business. -->
+      <!-- arrives transitively as well; declared for WorkflowTaskWiring alone: the core answers
+           there whether a called process shares the workflow aggregate of its caller. The
+           narrow WorkflowTaskClaims of the integration SPI does not offer that question yet.
+           Everything else this module asks VanillaBP is a type of the extension SPI or of the
+           integration SPI. Nothing here implements the adapter SPI - that is a BPMS adapter's
+           business. -->
       <groupId>io.vanillabp</groupId>
       <artifactId>vanillabp-adapter-spi</artifactId>
     </dependency>
@@ -111,6 +113,34 @@
             <camunda8-adapter.version>${camunda8-adapter.version}</camunda8-adapter.version>
           </systemPropertyVariables>
         </configuration>
+      </plugin>
+      <plugin>
+        <!-- the parent's rule, without the adapter SPI. This module still declares it, and the
+          comment at the dependency says why -->
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>an-extension-depends-on-the-extension-spi-alone</id>
+            <configuration>
+              <rules>
+                <bannedDependencies>
+                  <excludes combine.self="override">
+                    <exclude>io.vanillabp.adapter:migration-adapter:*:*:compile</exclude>
+                    <exclude>io.vanillabp:vanillabp-spring-boot-integration:*:*:compile</exclude>
+                    <exclude>io.vanillabp:vanillabp-quarkus-integration:*:*:compile</exclude>
+                    <exclude>io.vanillabp.adapter:migration-adapter:*:*:provided</exclude>
+                    <exclude>io.vanillabp:vanillabp-spring-boot-integration:*:*:provided</exclude>
+                    <exclude>io.vanillabp:vanillabp-quarkus-integration:*:*:provided</exclude>
+                    <exclude>io.vanillabp.adapter:migration-adapter:*:*:runtime</exclude>
+                    <exclude>io.vanillabp:vanillabp-spring-boot-integration:*:*:runtime</exclude>
+                    <exclude>io.vanillabp:vanillabp-quarkus-integration:*:*:runtime</exclude>
+                  </excludes>
+                </bannedDependencies>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

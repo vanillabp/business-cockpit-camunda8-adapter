@@ -124,6 +124,11 @@ public class Camunda8CockpitDeployments {
 
   private final Map<Deployment, Camunda8MultiInstance.Registry> multiInstancesByDeployment = new ConcurrentHashMap<>();
 
+  /**
+   * This is one of the two places where the extension still names a type of the adapter SPI. The
+   * narrow <code>WorkflowTaskClaims</code> of the integration SPI does not offer
+   * <code>workflowsShareTheWorkflowAggregate</code> yet. Once it does, this takes that type.
+   */
   private final Map<Deployment, WorkflowTaskWiring> coresByDeployment = new ConcurrentHashMap<>();
 
   /**

@@ -94,6 +94,11 @@ public class Camunda8CockpitBridge implements BusinessCockpitBpmsBridge {
 
   private final Camunda8Clients.Cluster cluster;
 
+  /**
+   * This is one of the two places where the extension still names a type of the adapter SPI. The
+   * narrow <code>WorkflowTaskClaims</code> of the integration SPI does not offer
+   * <code>workflowsShareTheWorkflowAggregate</code> yet. Once it does, this takes that type.
+   */
   private final WorkflowTaskWiring workflowTaskWiring;
 
   private final WorkflowElection election;

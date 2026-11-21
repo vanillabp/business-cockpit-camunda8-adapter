@@ -27,7 +27,7 @@ import jakarta.enterprise.inject.Instance;
 /**
  * Which Camunda 8 adapter ids get a bridge.
  * <p>
- * VanillaBP gives the answer ({@code MigrationAdapterProperties#adapterIdsOfType}). The two
+ * VanillaBP gives the answer ({@code VanillaBpSettings#adapterIdsOfType}). The two
  * cases below are the ones which a hand-written filter over the configured adapter TYPES misses.
  * One is an id which is only named in <code>prioritized-adapters</code>. A migration writes that
  * for the engine it is moving away from. The other is an application which configured nothing at

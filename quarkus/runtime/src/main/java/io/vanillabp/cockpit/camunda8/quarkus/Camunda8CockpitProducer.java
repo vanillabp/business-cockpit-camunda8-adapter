@@ -18,11 +18,11 @@ import io.vanillabp.cockpit.camunda8.Camunda8SuspensionCheck;
 import io.vanillabp.cockpit.camunda8.Camunda8SuspensionCheckInterval;
 import io.vanillabp.cockpit.extension.spi.BusinessCockpitBpmsBridge;
 import io.vanillabp.cockpit.extension.spi.BusinessCockpitEventPublisher;
-import io.vanillabp.integration.adapter.migration.config.MigrationAdapterProperties;
-import io.vanillabp.integration.adapter.spi.NameClashAvoidanceSupport;
 import io.vanillabp.integration.adapter.spi.workflowtask.WorkflowTaskWiring;
 import io.vanillabp.integration.extension.spi.ExtensionWiringService;
 import io.vanillabp.integration.extension.spi.election.WorkflowElection;
+import io.vanillabp.integration.extension.spi.settings.VanillaBpSettings;
+import io.vanillabp.integration.spi.IdentifierScoping;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Disposes;
 import jakarta.enterprise.inject.Instance;
@@ -59,7 +59,7 @@ public class Camunda8CockpitProducer {
   @Unremovable
   public Camunda8Clients businessCockpitCamunda8Clients(
       final Camunda8ClientFactoryRegistry clientFactories,
-      final NameClashAvoidanceSupport scoping) {
+      final IdentifierScoping scoping) {
 
     return new Camunda8Clients(clientFactories, scoping);
 
@@ -93,7 +93,7 @@ public class Camunda8CockpitProducer {
   @Unremovable
   public Camunda8CockpitSettings businessCockpitCamunda8Settings(
       final Camunda8CockpitOverlayProperties overlay,
-      final MigrationAdapterProperties platform) {
+      final VanillaBpSettings platform) {
 
     return Camunda8SuspensionCheckInterval
         .settingsOf(overlay.suspensionCheckIntervals(),
@@ -201,7 +201,7 @@ public class Camunda8CockpitProducer {
    * by the configuration, which a producer method cannot express. The cockpit's neutral half
    * collects both shapes.
    * <p>
-   * WHICH adapter ids those are is {@code MigrationAdapterProperties#adapterIdsOfType}, the same
+   * WHICH adapter ids those are is {@code VanillaBpSettings#adapterIdsOfType}, the same
    * answer the Spring Boot half reads through the platform's registrar support. Filtering the
    * configured types is not that answer. An id named in <code>prioritized-adapters</code> needs
    * no section of its own, and an application which configured nothing at all has the id the
@@ -222,7 +222,7 @@ public class Camunda8CockpitProducer {
   @Unremovable
   public List<BusinessCockpitBpmsBridge> businessCockpitCamunda8Bridges(
       final Camunda8Clients clients,
-      final MigrationAdapterProperties properties,
+      final VanillaBpSettings properties,
       final WorkflowTaskWiring workflowTaskWiring,
       final WorkflowElection election,
       final Camunda8CockpitDeployments deployments,

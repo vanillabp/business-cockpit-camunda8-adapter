@@ -545,6 +545,53 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <!-- An extension depends on the extension SPI alone, the same rule as in
+          extensions-commons of the Business Cockpit. The core of VanillaBP, the adapter SPI and
+          the platform integrations are test dependencies only. Tests may play an adapter or
+          build the configuration, and nothing of that reaches an application.
+          The rule checks what a module declares itself, not what arrives through another
+          dependency (searchTransitive=false). The Camunda 8 adapter is a BPMS adapter, and it
+          brings the adapter SPI and its platform integration along on purpose. Banning them
+          transitively would ban the adapter this extension plugs into. The Spring Boot module
+          calls AdapterBeanRegistrarSupport of the Spring Boot integration, which the platform
+          allows, and takes it through that adapter too.
+          The core module still declares the adapter SPI, and its POM says why. See
+          DECISIONS.pending/2191.md. -->
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>3.5.0</version>
+        <executions>
+          <execution>
+            <id>an-extension-depends-on-the-extension-spi-alone</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <bannedDependencies>
+                  <searchTransitive>false</searchTransitive>
+                  <excludes>
+                    <exclude>io.vanillabp.adapter:migration-adapter:*:*:compile</exclude>
+                    <exclude>io.vanillabp:vanillabp-adapter-spi:*:*:compile</exclude>
+                    <exclude>io.vanillabp:vanillabp-spring-boot-integration:*:*:compile</exclude>
+                    <exclude>io.vanillabp:vanillabp-quarkus-integration:*:*:compile</exclude>
+                    <exclude>io.vanillabp.adapter:migration-adapter:*:*:provided</exclude>
+                    <exclude>io.vanillabp:vanillabp-adapter-spi:*:*:provided</exclude>
+                    <exclude>io.vanillabp:vanillabp-spring-boot-integration:*:*:provided</exclude>
+                    <exclude>io.vanillabp:vanillabp-quarkus-integration:*:*:provided</exclude>
+                    <exclude>io.vanillabp.adapter:migration-adapter:*:*:runtime</exclude>
+                    <exclude>io.vanillabp:vanillabp-adapter-spi:*:*:runtime</exclude>
+                    <exclude>io.vanillabp:vanillabp-spring-boot-integration:*:*:runtime</exclude>
+                    <exclude>io.vanillabp:vanillabp-quarkus-integration:*:*:runtime</exclude>
+                  </excludes>
+                  <message>The Business Cockpit extension depends on io.vanillabp:vanillabp-extension-spi alone, and on the core, the adapter SPI and the platform integrations in test scope only. Everything an extension reads from VanillaBP is offered by the extension SPI and the integration SPI. See migration-adapter/EXTENSION-AUTHORS.md of vanillabp/adapter-platform-integration, section 1.</message>
+                </bannedDependencies>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 

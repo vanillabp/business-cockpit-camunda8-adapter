@@ -20,10 +20,10 @@ import io.vanillabp.cockpit.camunda8.Camunda8CockpitWorkers;
 import io.vanillabp.cockpit.camunda8.Camunda8SuspensionCheck;
 import io.vanillabp.cockpit.camunda8.Camunda8SuspensionCheckInterval;
 import io.vanillabp.cockpit.extension.spi.BusinessCockpitEventPublisher;
-import io.vanillabp.integration.adapter.migration.config.MigrationAdapterProperties;
-import io.vanillabp.integration.adapter.spi.NameClashAvoidanceSupport;
 import io.vanillabp.integration.adapter.spi.workflowtask.WorkflowTaskWiring;
 import io.vanillabp.integration.extension.spi.ExtensionWiringService;
+import io.vanillabp.integration.extension.spi.settings.VanillaBpSettings;
+import io.vanillabp.integration.spi.IdentifierScoping;
 
 /**
  * Registers the Camunda 8 half of the Business Cockpit extension on Spring Boot.
@@ -36,7 +36,7 @@ import io.vanillabp.integration.extension.spi.ExtensionWiringService;
  * extension does not compile against a platform integration.
  */
 @AutoConfiguration(afterName = "io.vanillabp.integration.processservice.SpringBootMigrationAdapterAutoConfiguration")
-@ConditionalOnBean(MigrationAdapterProperties.class)
+@ConditionalOnBean(VanillaBpSettings.class)
 @EnableConfigurationProperties(Camunda8CockpitOverlayProperties.class)
 @Import(Camunda8CockpitBeanRegistrar.class)
 public class Camunda8CockpitAutoConfiguration {
@@ -58,7 +58,7 @@ public class Camunda8CockpitAutoConfiguration {
   @Bean
   public Camunda8Clients businessCockpitCamunda8Clients(
       final Camunda8ClientFactoryRegistry clientFactories,
-      final NameClashAvoidanceSupport scoping) {
+      final IdentifierScoping scoping) {
 
     return new Camunda8Clients(clientFactories, scoping);
 
@@ -90,7 +90,7 @@ public class Camunda8CockpitAutoConfiguration {
   @Bean
   public Camunda8CockpitSettings businessCockpitCamunda8Settings(
       final Camunda8CockpitOverlayProperties overlay,
-      final MigrationAdapterProperties platform) {
+      final VanillaBpSettings platform) {
 
     return Camunda8SuspensionCheckInterval
         .settingsOf(overlay.suspensionCheckIntervals(),

@@ -51,11 +51,10 @@ import io.vanillabp.cockpit.camunda8.Camunda8CockpitDeployments.WiredListener;
 import io.vanillabp.cockpit.extension.spi.BusinessCockpitEventPublisher;
 import io.vanillabp.cockpit.extension.spi.UserTaskReference;
 import io.vanillabp.cockpit.extension.spi.WorkflowReference;
-import io.vanillabp.integration.adapter.spi.NameClashAvoidance;
-import io.vanillabp.integration.adapter.spi.NameClashAvoidanceSupport;
 import io.vanillabp.integration.adapter.spi.workflowtask.WorkflowTaskWiring;
 import io.vanillabp.integration.extension.spi.election.WorkflowElection;
 import io.vanillabp.integration.extension.spi.election.WorkflowStart;
+import io.vanillabp.integration.spi.IdentifierScoping;
 import io.vanillabp.integration.test.utils.SuppressOutputExtension;
 
 /**
@@ -101,7 +100,7 @@ public class Camunda8CockpitBridgeTest {
    * under <code>use-prefix</code> unless a test says otherwise, so the process id the filter
    * carries is not the one the caller asked about.
    */
-  private final NameClashAvoidanceSupport scoping = mock(NameClashAvoidanceSupport.class);
+  private final IdentifierScoping scoping = mock(IdentifierScoping.class);
 
   private static final String SCOPED_PROCESS_ID = "cockpit-module-CockpitProcess";
 
@@ -905,7 +904,7 @@ public class Camunda8CockpitBridgeTest {
   @DisplayName("A module separated by tenants searches inside its tenant")
   public void theSearchOfATenantCarriesIt() {
 
-    when(scoping.modeFor(MODULE_ID, null, "c8")).thenReturn(NameClashAvoidance.BY_ADAPTER);
+    when(scoping.isolatesByAdapter(MODULE_ID, null, "c8")).thenReturn(true);
 
     bridgeOfAScopedModule().workflowsOfAggregate(MODULE_ID, PROCESS_ID, AGGREGATE_ID);
 

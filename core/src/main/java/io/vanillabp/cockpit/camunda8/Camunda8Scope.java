@@ -1,7 +1,7 @@
 package io.vanillabp.cockpit.camunda8;
 
 import io.vanillabp.camunda8.wiring.Camunda8Scoping;
-import io.vanillabp.integration.adapter.spi.NameClashAvoidanceSupport;
+import io.vanillabp.integration.spi.IdentifierScoping;
 
 /**
  * How one configured Camunda 8 cluster names the things the extension asks it about.
@@ -18,7 +18,7 @@ public class Camunda8Scope {
 
   private final String adapterId;
 
-  private final NameClashAvoidanceSupport scoping;
+  private final IdentifierScoping scoping;
 
   private final String configuredTenantId;
 
@@ -32,7 +32,7 @@ public class Camunda8Scope {
    */
   public Camunda8Scope(
       final String adapterId,
-      final NameClashAvoidanceSupport scoping,
+      final IdentifierScoping scoping,
       final String configuredTenantId) {
 
     this.adapterId = adapterId;
@@ -78,7 +78,7 @@ public class Camunda8Scope {
       final String workflowModuleId,
       final String bpmnProcessId) {
 
-    return NameClashAvoidanceSupport
+    return IdentifierScoping
         .scopedProcessId(scoping, workflowModuleId, bpmnProcessId, adapterId);
 
   }
@@ -97,7 +97,7 @@ public class Camunda8Scope {
       final String bpmnProcessId,
       final String taskDefinition) {
 
-    return NameClashAvoidanceSupport
+    return IdentifierScoping
         .plainTaskDefinition(scoping, workflowModuleId, bpmnProcessId, taskDefinition, adapterId);
 
   }
