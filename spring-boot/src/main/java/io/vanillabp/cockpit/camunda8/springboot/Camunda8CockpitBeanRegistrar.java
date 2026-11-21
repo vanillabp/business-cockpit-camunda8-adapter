@@ -11,8 +11,8 @@ import io.vanillabp.cockpit.camunda8.Camunda8CockpitDeployments;
 import io.vanillabp.cockpit.extension.spi.BusinessCockpitBpmsBridge;
 import io.vanillabp.cockpit.extension.spi.BusinessCockpitEventPublisher;
 import io.vanillabp.integration.adapter.AdapterBeanRegistrarSupport;
-import io.vanillabp.integration.adapter.spi.workflowtask.WorkflowTaskWiring;
 import io.vanillabp.integration.extension.spi.election.WorkflowElection;
+import io.vanillabp.integration.spi.workflowtask.WorkflowTaskClaims;
 
 /**
  * Registers one Business Cockpit bridge per configured Camunda 8 adapter id.
@@ -58,7 +58,7 @@ public class Camunda8CockpitBeanRegistrar implements BeanRegistrar {
                             supplierContext -> new Camunda8CockpitBridge(
                                 supplierContext
                                     .bean(Camunda8Clients.class)
-                                    .of(adapterId), supplierContext.bean(WorkflowTaskWiring.class), supplierContext
+                                    .of(adapterId), supplierContext.bean(WorkflowTaskClaims.class), supplierContext
                                         .bean(WorkflowElection.class), supplierContext
                                             .bean(Camunda8CockpitDeployments.class),
                                 // asked for when a task is read: the extension collects the

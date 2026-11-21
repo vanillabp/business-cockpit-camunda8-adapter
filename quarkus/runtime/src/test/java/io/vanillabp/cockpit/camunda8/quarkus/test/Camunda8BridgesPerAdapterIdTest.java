@@ -19,15 +19,15 @@ import io.vanillabp.cockpit.camunda8.quarkus.Camunda8CockpitProducer;
 import io.vanillabp.cockpit.extension.spi.BusinessCockpitEventPublisher;
 import io.vanillabp.integration.adapter.migration.config.AdapterConfigProperties;
 import io.vanillabp.integration.adapter.migration.config.MigrationAdapterProperties;
-import io.vanillabp.integration.adapter.spi.workflowtask.WorkflowTaskWiring;
 import io.vanillabp.integration.extension.spi.election.WorkflowElection;
+import io.vanillabp.integration.spi.workflowtask.WorkflowTaskClaims;
 import io.vanillabp.integration.test.utils.SuppressOutputExtension;
 import jakarta.enterprise.inject.Instance;
 
 /**
  * Which Camunda 8 adapter ids get a bridge.
  * <p>
- * VanillaBP gives the answer ({@code MigrationAdapterProperties#adapterIdsOfType}). The two
+ * VanillaBP gives the answer ({@code VanillaBpSettings#adapterIdsOfType}). The two
  * cases below are the ones which a hand-written filter over the configured adapter TYPES misses.
  * One is an id which is only named in <code>prioritized-adapters</code>. A migration writes that
  * for the engine it is moving away from. The other is an application which configured nothing at
@@ -44,7 +44,7 @@ public class Camunda8BridgesPerAdapterIdTest {
   private final Camunda8ClientFactoryRegistry clientFactories = mock(
       Camunda8ClientFactoryRegistry.class, RETURNS_DEEP_STUBS);
 
-  private final WorkflowTaskWiring workflowTaskWiring = mock(WorkflowTaskWiring.class);
+  private final WorkflowTaskClaims workflowTaskClaims = mock(WorkflowTaskClaims.class);
 
   /** The Business Cockpit extension. A bridge asks it only when it reads a task, so never here. */
   @SuppressWarnings("unchecked")
@@ -55,7 +55,7 @@ public class Camunda8BridgesPerAdapterIdTest {
 
     return new Camunda8CockpitProducer()
         .businessCockpitCamunda8Bridges(
-            new Camunda8Clients(clientFactories, null), properties, workflowTaskWiring, mock(
+            new Camunda8Clients(clientFactories, null), properties, workflowTaskClaims, mock(
                 WorkflowElection.class),
             new Camunda8CockpitDeployments(), publisher)
         .stream()

@@ -18,11 +18,11 @@ import io.vanillabp.cockpit.camunda8.Camunda8SuspensionCheck;
 import io.vanillabp.cockpit.camunda8.Camunda8SuspensionCheckInterval;
 import io.vanillabp.cockpit.extension.spi.BusinessCockpitBpmsBridge;
 import io.vanillabp.cockpit.extension.spi.BusinessCockpitEventPublisher;
-import io.vanillabp.integration.adapter.migration.config.MigrationAdapterProperties;
-import io.vanillabp.integration.adapter.spi.NameClashAvoidanceSupport;
-import io.vanillabp.integration.adapter.spi.workflowtask.WorkflowTaskWiring;
 import io.vanillabp.integration.extension.spi.ExtensionWiringService;
 import io.vanillabp.integration.extension.spi.election.WorkflowElection;
+import io.vanillabp.integration.extension.spi.settings.VanillaBpSettings;
+import io.vanillabp.integration.spi.IdentifierScoping;
+import io.vanillabp.integration.spi.workflowtask.WorkflowTaskClaims;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Disposes;
 import jakarta.enterprise.inject.Instance;
@@ -59,7 +59,7 @@ public class Camunda8CockpitProducer {
   @Unremovable
   public Camunda8Clients businessCockpitCamunda8Clients(
       final Camunda8ClientFactoryRegistry clientFactories,
-      final NameClashAvoidanceSupport scoping) {
+      final IdentifierScoping scoping) {
 
     return new Camunda8Clients(clientFactories, scoping);
 
@@ -93,7 +93,7 @@ public class Camunda8CockpitProducer {
   @Unremovable
   public Camunda8CockpitSettings businessCockpitCamunda8Settings(
       final Camunda8CockpitOverlayProperties overlay,
-      final MigrationAdapterProperties platform) {
+      final VanillaBpSettings platform) {
 
     return Camunda8SuspensionCheckInterval
         .settingsOf(overlay.suspensionCheckIntervals(),
@@ -169,7 +169,7 @@ public class Camunda8CockpitProducer {
    * @param clients The clusters
    * @param deployments Where the listeners are remembered
    * @param workers The workers serving them
-   * @param workflowTaskWiring VanillaBP's registry, which names the workflow aggregate's id
+   * @param workflowTaskClaims VanillaBP's registry, which names the workflow aggregate's id
    *          variable of a BPMN process
    * @param publisher The extension, which is told the user tasks of every wired model. It is
    *          resolved when the first model is wired
@@ -184,12 +184,12 @@ public class Camunda8CockpitProducer {
       final Camunda8Clients clients,
       final Camunda8CockpitDeployments deployments,
       final Camunda8CockpitWorkers workers,
-      final WorkflowTaskWiring workflowTaskWiring,
+      final WorkflowTaskClaims workflowTaskClaims,
       final Instance<BusinessCockpitEventPublisher> publisher,
       final Camunda8SuspensionCheck suspensionCheck) {
 
     return new Camunda8CockpitWiring(
-        clients, deployments, workers, workflowTaskWiring, publisher::get, suspensionCheck);
+        clients, deployments, workers, workflowTaskClaims, publisher::get, suspensionCheck);
 
   }
 
@@ -201,7 +201,7 @@ public class Camunda8CockpitProducer {
    * by the configuration, which a producer method cannot express. The cockpit's neutral half
    * collects both shapes.
    * <p>
-   * WHICH adapter ids those are is {@code MigrationAdapterProperties#adapterIdsOfType}, the same
+   * WHICH adapter ids those are is {@code VanillaBpSettings#adapterIdsOfType}, the same
    * answer the Spring Boot half reads through the platform's registrar support. Filtering the
    * configured types is not that answer. An id named in <code>prioritized-adapters</code> needs
    * no section of its own, and an application which configured nothing at all has the id the
@@ -210,7 +210,7 @@ public class Camunda8CockpitProducer {
    *
    * @param clients The clusters
    * @param properties VanillaBP's resolved configuration, which names the configured adapters
-   * @param workflowTaskWiring VanillaBP's registry
+   * @param workflowTaskClaims VanillaBP's registry
    * @param election VanillaBP's election, which knows the key of a workflow it started
    * @param deployments What this extension read out of the models while wiring them
    * @param publisher The Business Cockpit extension, resolved when a task is read rather than
@@ -222,8 +222,8 @@ public class Camunda8CockpitProducer {
   @Unremovable
   public List<BusinessCockpitBpmsBridge> businessCockpitCamunda8Bridges(
       final Camunda8Clients clients,
-      final MigrationAdapterProperties properties,
-      final WorkflowTaskWiring workflowTaskWiring,
+      final VanillaBpSettings properties,
+      final WorkflowTaskClaims workflowTaskClaims,
       final WorkflowElection election,
       final Camunda8CockpitDeployments deployments,
       final Instance<BusinessCockpitEventPublisher> publisher) {
@@ -233,7 +233,7 @@ public class Camunda8CockpitProducer {
         .stream()
         .<BusinessCockpitBpmsBridge>map(
             adapterId -> new Camunda8CockpitBridge(
-                clients.of(adapterId), workflowTaskWiring, election, deployments, publisher::get))
+                clients.of(adapterId), workflowTaskClaims, election, deployments, publisher::get))
         .toList();
 
   }

@@ -7,7 +7,7 @@ import io.camunda.client.CamundaClient;
 import io.vanillabp.camunda8.client.Camunda8AdapterConfiguration;
 import io.vanillabp.camunda8.client.Camunda8ClientFactory;
 import io.vanillabp.camunda8.client.Camunda8ClientFactoryRegistry;
-import io.vanillabp.integration.adapter.spi.NameClashAvoidanceSupport;
+import io.vanillabp.integration.spi.IdentifierScoping;
 
 /**
  * The Camunda 8 clusters this application talks to, as far as the Business Cockpit needs them.
@@ -157,7 +157,7 @@ public class Camunda8Clients {
 
   private final Camunda8ClientFactoryRegistry clientFactories;
 
-  private final NameClashAvoidanceSupport scoping;
+  private final IdentifierScoping scoping;
 
   private final Map<String, Cluster> clusters = new ConcurrentHashMap<>();
 
@@ -172,7 +172,7 @@ public class Camunda8Clients {
    */
   public Camunda8Clients(
       final Camunda8ClientFactoryRegistry clientFactories,
-      final NameClashAvoidanceSupport scoping) {
+      final IdentifierScoping scoping) {
 
     this.clientFactories = clientFactories;
     this.scoping = scoping;

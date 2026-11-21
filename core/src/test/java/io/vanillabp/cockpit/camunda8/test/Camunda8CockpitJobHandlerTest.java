@@ -46,9 +46,9 @@ import io.vanillabp.cockpit.extension.spi.EventTransaction;
 import io.vanillabp.cockpit.extension.spi.UserTaskEventKind;
 import io.vanillabp.cockpit.extension.spi.UserTaskReference;
 import io.vanillabp.cockpit.extension.spi.WorkflowEventKind;
-import io.vanillabp.integration.adapter.spi.workflowtask.WorkflowTaskWiring;
 import io.vanillabp.integration.extension.spi.election.WorkflowElection;
 import io.vanillabp.integration.extension.spi.handler.HandlerMultiInstance;
+import io.vanillabp.integration.spi.workflowtask.WorkflowTaskClaims;
 import io.vanillabp.integration.test.utils.SuppressOutputExtension;
 
 /**
@@ -131,7 +131,7 @@ public class Camunda8CockpitJobHandlerTest {
       Camunda8ClientFactoryRegistry.class, RETURNS_DEEP_STUBS);
 
   /** What a bridge asks for the name of the aggregate id variable, which no test here reads. */
-  private final WorkflowTaskWiring workflowTaskWiring = mock(WorkflowTaskWiring.class);
+  private final WorkflowTaskClaims workflowTaskClaims = mock(WorkflowTaskClaims.class);
 
   private Camunda8CockpitJobHandler handler;
 
@@ -172,7 +172,7 @@ public class Camunda8CockpitJobHandlerTest {
                         CALLING_PROCESS_ID), CALLING_PROCESS_ID, CALLING_PROCESS_ID, CALLING_PROCESS_ID, "The caller", "The caller", AGGREGATE_ID_NAME));
     // the core which answers whether a called process shares its caller's aggregate. A test of a
     // called process says what it answers
-    deployments.rememberTheCore(ADAPTER_ID, MODULE_ID, workflowTaskWiring);
+    deployments.rememberTheCore(ADAPTER_ID, MODULE_ID, workflowTaskClaims);
     when(clientFactories.getFactory(ADAPTER_ID).drainOf(MODULE_ID)).thenReturn(drain);
     handler = new Camunda8CockpitJobHandler(
         new Camunda8Clients(clientFactories, null)
@@ -253,7 +253,7 @@ public class Camunda8CockpitJobHandlerTest {
     final var clients = new Camunda8Clients(clientFactories, null);
     final var asked = new RecordingPublisher(
         new Camunda8CockpitBridge(
-            clients.of(ADAPTER_ID), workflowTaskWiring, NOTHING_WRITTEN_DOWN, deployments, () -> publisher));
+            clients.of(ADAPTER_ID), workflowTaskClaims, NOTHING_WRITTEN_DOWN, deployments, () -> publisher));
     handler = new Camunda8CockpitJobHandler(
         clients.of(ADAPTER_ID), MODULE_ID, deployments, multiInstances, () -> asked);
     return asked;
@@ -432,7 +432,7 @@ public class Camunda8CockpitJobHandlerTest {
 
     JobsInAHierarchy.isCalledBy(clientFactories, ADAPTER_ID, job, 777L, 12345L);
     CallChains.calls(clientFactories, ADAPTER_ID, 12345L, CALLING_PROCESS_ID, 777L, PROCESS_ID);
-    when(workflowTaskWiring.workflowsShareTheWorkflowAggregate(MODULE_ID, CALLING_PROCESS_ID, PROCESS_ID))
+    when(workflowTaskClaims.workflowsShareTheWorkflowAggregate(MODULE_ID, CALLING_PROCESS_ID, PROCESS_ID))
         .thenReturn(sharingTheAggregate);
 
   }
@@ -517,7 +517,7 @@ public class Camunda8CockpitJobHandlerTest {
 
     final var clients = new Camunda8Clients(clientFactories, null);
     final var bridge = new Camunda8CockpitBridge(
-        clients.of(ADAPTER_ID), workflowTaskWiring, NOTHING_WRITTEN_DOWN, deployments, () -> publisher);
+        clients.of(ADAPTER_ID), workflowTaskClaims, NOTHING_WRITTEN_DOWN, deployments, () -> publisher);
     handler = new Camunda8CockpitJobHandler(
         clients.of(ADAPTER_ID), MODULE_ID, deployments, new Camunda8MultiInstance.Registry(), () -> publisher);
 

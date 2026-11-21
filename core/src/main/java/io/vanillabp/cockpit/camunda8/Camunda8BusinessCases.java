@@ -21,7 +21,7 @@ import io.vanillabp.camunda8.client.Camunda8Errors;
  * walk stops at the first caller which does not share it.
  * <p>
  * Whether two processes share the aggregate is the core's answer
- * (<code>WorkflowTaskWiring#workflowsShareTheWorkflowAggregate</code>), the same answer the
+ * (<code>WorkflowTaskClaims#workflowsShareTheWorkflowAggregate</code>), the same answer the
  * Camunda 8 adapter uses for its call activities. This class does not decide it. It only reads the
  * call hierarchy from the cluster and hands each pair of the chain to that answer.
  * <p>

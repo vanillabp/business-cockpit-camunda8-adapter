@@ -31,7 +31,7 @@ import io.vanillabp.cockpit.camunda8.Camunda8CockpitDeployments.WiredListener;
 import io.vanillabp.cockpit.camunda8.Camunda8CockpitListeners;
 import io.vanillabp.cockpit.camunda8.Camunda8CockpitWiring;
 import io.vanillabp.cockpit.extension.spi.BusinessCockpitEventPublisher;
-import io.vanillabp.integration.adapter.spi.workflowtask.WorkflowTaskWiring;
+import io.vanillabp.integration.spi.workflowtask.WorkflowTaskClaims;
 import io.vanillabp.integration.test.utils.SuppressOutputExtension;
 
 /**
@@ -97,7 +97,7 @@ public class Camunda8CockpitJobWorkerUserTasksTest {
   private final Camunda8ClientFactoryRegistry clientFactories = mock(
       Camunda8ClientFactoryRegistry.class, RETURNS_DEEP_STUBS);
 
-  private final WorkflowTaskWiring workflowTaskWiring = mock(WorkflowTaskWiring.class);
+  private final WorkflowTaskClaims workflowTaskClaims = mock(WorkflowTaskClaims.class);
 
   private final BusinessCockpitEventPublisher publisher = mock(BusinessCockpitEventPublisher.class);
 
@@ -124,10 +124,10 @@ public class Camunda8CockpitJobWorkerUserTasksTest {
   private BpmnModelInstance wiredByTheCockpit() {
 
     when(context.getAdapterId()).thenReturn(ADAPTER_ID);
-    when(workflowTaskWiring.isClaimedByAWorkflowService(MODULE_ID, PROCESS_ID)).thenReturn(true);
-    when(workflowTaskWiring.resolveWorkflowAggregateIdName(MODULE_ID, PROCESS_ID)).thenReturn("loanId");
+    when(workflowTaskClaims.isClaimedByAWorkflowService(MODULE_ID, PROCESS_ID)).thenReturn(true);
+    when(workflowTaskClaims.resolveWorkflowAggregateIdName(MODULE_ID, PROCESS_ID)).thenReturn("loanId");
     final var wiring = new Camunda8CockpitWiring(
-        new Camunda8Clients(clientFactories, null), deployments, null, workflowTaskWiring, () -> publisher, null);
+        new Camunda8Clients(clientFactories, null), deployments, null, workflowTaskClaims, () -> publisher, null);
 
     final var model = aModelVanillaBpWired();
     wiring.wireBpmn(MODULE_ID, "cockpit-process.bpmn", PROCESS_ID, model, context);

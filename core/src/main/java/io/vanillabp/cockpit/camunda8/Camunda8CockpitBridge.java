@@ -27,10 +27,10 @@ import io.vanillabp.cockpit.extension.spi.UserTaskDetailsPrefill;
 import io.vanillabp.cockpit.extension.spi.UserTaskReference;
 import io.vanillabp.cockpit.extension.spi.WorkflowDetailsPrefill;
 import io.vanillabp.cockpit.extension.spi.WorkflowReference;
-import io.vanillabp.integration.adapter.spi.workflowtask.WorkflowTaskWiring;
 import io.vanillabp.integration.extension.spi.election.WorkflowElection;
 import io.vanillabp.integration.extension.spi.election.WorkflowStart;
 import io.vanillabp.integration.extension.spi.handler.HandlerMultiInstance;
+import io.vanillabp.integration.spi.workflowtask.WorkflowTaskClaims;
 
 /**
  * What one configured Camunda 8 cluster answers the Business Cockpit.
@@ -94,7 +94,7 @@ public class Camunda8CockpitBridge implements BusinessCockpitBpmsBridge {
 
   private final Camunda8Clients.Cluster cluster;
 
-  private final WorkflowTaskWiring workflowTaskWiring;
+  private final WorkflowTaskClaims workflowTaskClaims;
 
   private final WorkflowElection election;
 
@@ -106,7 +106,7 @@ public class Camunda8CockpitBridge implements BusinessCockpitBpmsBridge {
    * Creates the bridge through which the cockpit reads one cluster.
    *
    * @param cluster The cluster this bridge reads
-   * @param workflowTaskWiring VanillaBP's registry, which names the workflow aggregate's id
+   * @param workflowTaskClaims VanillaBP's registry, which names the workflow aggregate's id
    *          variable of a BPMN process
    * @param election VanillaBP's election, asked only for what it wrote down when a workflow
    *          started
@@ -117,13 +117,13 @@ public class Camunda8CockpitBridge implements BusinessCockpitBpmsBridge {
    */
   public Camunda8CockpitBridge(
       final Camunda8Clients.Cluster cluster,
-      final WorkflowTaskWiring workflowTaskWiring,
+      final WorkflowTaskClaims workflowTaskClaims,
       final WorkflowElection election,
       final Camunda8CockpitDeployments deployments,
       final Supplier<BusinessCockpitEventPublisher> publisher) {
 
     this.cluster = cluster;
-    this.workflowTaskWiring = workflowTaskWiring;
+    this.workflowTaskClaims = workflowTaskClaims;
     this.election = election;
     this.deployments = deployments;
     this.publisher = publisher;
@@ -874,7 +874,7 @@ public class Camunda8CockpitBridge implements BusinessCockpitBpmsBridge {
         .forEach((
             scopedBpmnProcessId,
             wiredBpmnProcessId) -> {
-          if (workflowTaskWiring
+          if (workflowTaskClaims
               .workflowsShareTheWorkflowAggregate(
                   workflowModuleId, bpmnProcessId, wiredBpmnProcessId)) {
             processes.putIfAbsent(scopedBpmnProcessId, wiredBpmnProcessId);
@@ -1008,7 +1008,7 @@ public class Camunda8CockpitBridge implements BusinessCockpitBpmsBridge {
                 .bpmnProcessIdsByScopedIdOf(adapterId(), workflowModuleId),
             (
                 calling,
-                called) -> workflowTaskWiring
+                called) -> workflowTaskClaims
                     .workflowsShareTheWorkflowAggregate(workflowModuleId, calling, called));
 
   }
@@ -1056,7 +1056,7 @@ public class Camunda8CockpitBridge implements BusinessCockpitBpmsBridge {
       final String workflowModuleId,
       final String bpmnProcessId) {
 
-    return workflowTaskWiring.resolveWorkflowAggregateIdName(workflowModuleId, bpmnProcessId);
+    return workflowTaskClaims.resolveWorkflowAggregateIdName(workflowModuleId, bpmnProcessId);
 
   }
 
