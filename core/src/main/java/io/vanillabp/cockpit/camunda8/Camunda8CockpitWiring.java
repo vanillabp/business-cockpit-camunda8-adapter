@@ -14,9 +14,9 @@ import io.vanillabp.camunda8.wiring.Camunda8TaskWiring;
 import io.vanillabp.cockpit.camunda8.Camunda8CockpitDeployments.WiredListener;
 import io.vanillabp.cockpit.extension.spi.BusinessCockpitEventPublisher;
 import io.vanillabp.cockpit.extension.wiring.BusinessCockpitWiringService;
-import io.vanillabp.integration.adapter.spi.workflowtask.WorkflowTaskWiring;
 import io.vanillabp.integration.extension.spi.ExtensionWiringService;
 import io.vanillabp.integration.extension.spi.runtime.SuspendedWorkflowFound;
+import io.vanillabp.integration.spi.workflowtask.WorkflowTaskClaims;
 
 /**
  * The Camunda 8 half of the Business Cockpit in VanillaBP's deployment pipeline.
@@ -41,7 +41,7 @@ public class Camunda8CockpitWiring implements ExtensionWiringService<BpmnModelIn
 
   private final Camunda8CockpitWorkers workers;
 
-  private final WorkflowTaskWiring workflowTaskWiring;
+  private final WorkflowTaskClaims workflowTaskClaims;
 
   private final Supplier<BusinessCockpitEventPublisher> publisher;
 
@@ -53,7 +53,7 @@ public class Camunda8CockpitWiring implements ExtensionWiringService<BpmnModelIn
    * @param clients The clusters of the configured Camunda 8 adapters
    * @param deployments Where what was wired is remembered
    * @param workers The workers serving the listeners
-   * @param workflowTaskWiring VanillaBP's registry of what the application declared, which is
+   * @param workflowTaskClaims VanillaBP's registry of what the application declared, which is
    *          what names the workflow aggregate's id variable
    * @param publisher The extension, which is told the user tasks of every wired model
    * @param suspensionCheck What asks the cluster about suspended workflows, told which modules
@@ -63,14 +63,14 @@ public class Camunda8CockpitWiring implements ExtensionWiringService<BpmnModelIn
       final Camunda8Clients clients,
       final Camunda8CockpitDeployments deployments,
       final Camunda8CockpitWorkers workers,
-      final WorkflowTaskWiring workflowTaskWiring,
+      final WorkflowTaskClaims workflowTaskClaims,
       final Supplier<BusinessCockpitEventPublisher> publisher,
       final Camunda8SuspensionCheck suspensionCheck) {
 
     this.clients = clients;
     this.deployments = deployments;
     this.workers = workers;
-    this.workflowTaskWiring = workflowTaskWiring;
+    this.workflowTaskClaims = workflowTaskClaims;
     this.publisher = publisher;
     this.suspensionCheck = suspensionCheck;
 
@@ -107,8 +107,8 @@ public class Camunda8CockpitWiring implements ExtensionWiringService<BpmnModelIn
 
     final var adapterId = context.getAdapterId();
     // the listener jobs ask the core later which called process shares its caller's aggregate
-    deployments.rememberTheCore(adapterId, workflowModuleId, workflowTaskWiring);
-    if (!workflowTaskWiring.isClaimedByAWorkflowService(workflowModuleId, bpmnProcessId)) {
+    deployments.rememberTheCore(adapterId, workflowModuleId, workflowTaskClaims);
+    if (!workflowTaskClaims.isClaimedByAWorkflowService(workflowModuleId, bpmnProcessId)) {
       // A listener job nobody serves stops the workflow where it sits.
       // A BPMN process which no @WorkflowService class claims has no workflow aggregate, so
       // there is nothing the cockpit could report a case for, and it gets no listener either.
@@ -120,7 +120,7 @@ public class Camunda8CockpitWiring implements ExtensionWiringService<BpmnModelIn
               bpmnProcessId, workflowModuleId, filename);
       return;
     }
-    final var aggregateIdName = workflowTaskWiring
+    final var aggregateIdName = workflowTaskClaims
         .resolveWorkflowAggregateIdName(workflowModuleId, bpmnProcessId);
 
     final var process = processInModel(model, adapterId, workflowModuleId, bpmnProcessId);

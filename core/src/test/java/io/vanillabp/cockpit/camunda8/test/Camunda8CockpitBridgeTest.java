@@ -51,10 +51,10 @@ import io.vanillabp.cockpit.camunda8.Camunda8CockpitDeployments.WiredListener;
 import io.vanillabp.cockpit.extension.spi.BusinessCockpitEventPublisher;
 import io.vanillabp.cockpit.extension.spi.UserTaskReference;
 import io.vanillabp.cockpit.extension.spi.WorkflowReference;
-import io.vanillabp.integration.adapter.spi.workflowtask.WorkflowTaskWiring;
 import io.vanillabp.integration.extension.spi.election.WorkflowElection;
 import io.vanillabp.integration.extension.spi.election.WorkflowStart;
 import io.vanillabp.integration.spi.IdentifierScoping;
+import io.vanillabp.integration.spi.workflowtask.WorkflowTaskClaims;
 import io.vanillabp.integration.test.utils.SuppressOutputExtension;
 
 /**
@@ -78,7 +78,7 @@ public class Camunda8CockpitBridgeTest {
   private final Camunda8ClientFactoryRegistry clientFactories = mock(
       Camunda8ClientFactoryRegistry.class, RETURNS_DEEP_STUBS);
 
-  private final WorkflowTaskWiring workflowTaskWiring = mock(WorkflowTaskWiring.class);
+  private final WorkflowTaskClaims workflowTaskClaims = mock(WorkflowTaskClaims.class);
 
   /**
    * What VanillaBP wrote down when it started a workflow. Unless a test says otherwise it knows
@@ -165,7 +165,7 @@ public class Camunda8CockpitBridgeTest {
 
     final var clients = new Camunda8Clients(clientFactories, null);
     return new Camunda8CockpitBridge(
-        clients.of("c8"), workflowTaskWiring, election, deployments, () -> publisher);
+        clients.of("c8"), workflowTaskClaims, election, deployments, () -> publisher);
 
   }
 
@@ -190,7 +190,7 @@ public class Camunda8CockpitBridgeTest {
       final List<ProcessInstance> found) {
 
     when(scoping.scopedProcessId(MODULE_ID, PROCESS_ID, "c8")).thenReturn(SCOPED_PROCESS_ID);
-    when(workflowTaskWiring.resolveWorkflowAggregateIdName(MODULE_ID, PROCESS_ID))
+    when(workflowTaskClaims.resolveWorkflowAggregateIdName(MODULE_ID, PROCESS_ID))
         .thenReturn(AGGREGATE_ID_NAME);
     final var search = clientFactories
         .getFactory("c8")
@@ -206,7 +206,7 @@ public class Camunda8CockpitBridgeTest {
     clearInvocations(search);
     final var clients = new Camunda8Clients(clientFactories, scoping);
     return new Camunda8CockpitBridge(
-        clients.of("c8"), workflowTaskWiring, election, deployments, () -> publisher);
+        clients.of("c8"), workflowTaskClaims, election, deployments, () -> publisher);
 
   }
 
@@ -221,7 +221,7 @@ public class Camunda8CockpitBridgeTest {
       final List<UserTask> found) {
 
     when(scoping.scopedProcessId(MODULE_ID, PROCESS_ID, "c8")).thenReturn(SCOPED_PROCESS_ID);
-    when(workflowTaskWiring.resolveWorkflowAggregateIdName(MODULE_ID, PROCESS_ID))
+    when(workflowTaskClaims.resolveWorkflowAggregateIdName(MODULE_ID, PROCESS_ID))
         .thenReturn(AGGREGATE_ID_NAME);
     final var search = clientFactories.getFactory("c8").getClient().newUserTaskSearchRequest();
     // a search request returns itself, like the workflow search above, so the answer of the
@@ -231,7 +231,7 @@ public class Camunda8CockpitBridgeTest {
     clearInvocations(search);
     final var clients = new Camunda8Clients(clientFactories, scoping);
     return new Camunda8CockpitBridge(
-        clients.of("c8"), workflowTaskWiring, election, deployments, () -> publisher);
+        clients.of("c8"), workflowTaskClaims, election, deployments, () -> publisher);
 
   }
 
@@ -289,7 +289,7 @@ public class Camunda8CockpitBridgeTest {
         .userTaskOfAggregate(MODULE_ID, PROCESS_ID, "4711", "a-camunda-7-task-id");
 
     assertTrue(found.isEmpty());
-    verifyNoInteractions(workflowTaskWiring);
+    verifyNoInteractions(workflowTaskClaims);
 
   }
 
@@ -738,7 +738,7 @@ public class Camunda8CockpitBridgeTest {
     assertTrue(found.isEmpty());
     // nothing was searched and nothing is ambiguous here, so there is nothing to warn about
     assertTrue(whatTheBridgeSaid(Level.WARN).isEmpty(), whatTheBridgeSaid(Level.WARN).toString());
-    verifyNoInteractions(workflowTaskWiring);
+    verifyNoInteractions(workflowTaskClaims);
 
   }
 
@@ -773,11 +773,11 @@ public class Camunda8CockpitBridgeTest {
             "c8", MODULE_ID,
             new WiredListener(
                 "type-c", SCOPED_OWN_CASE_PROCESS_ID, OWN_CASE_PROCESS_ID, "Check", "Check", "Own case", AGGREGATE_ID_NAME, "check"));
-    when(workflowTaskWiring.workflowsShareTheWorkflowAggregate(MODULE_ID, PROCESS_ID, PROCESS_ID))
+    when(workflowTaskClaims.workflowsShareTheWorkflowAggregate(MODULE_ID, PROCESS_ID, PROCESS_ID))
         .thenReturn(true);
-    when(workflowTaskWiring.workflowsShareTheWorkflowAggregate(MODULE_ID, PROCESS_ID, CALLED_PROCESS_ID))
+    when(workflowTaskClaims.workflowsShareTheWorkflowAggregate(MODULE_ID, PROCESS_ID, CALLED_PROCESS_ID))
         .thenReturn(true);
-    when(workflowTaskWiring.workflowsShareTheWorkflowAggregate(MODULE_ID, PROCESS_ID, OWN_CASE_PROCESS_ID))
+    when(workflowTaskClaims.workflowsShareTheWorkflowAggregate(MODULE_ID, PROCESS_ID, OWN_CASE_PROCESS_ID))
         .thenReturn(false);
 
   }

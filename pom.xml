@@ -164,9 +164,7 @@
       <!-- one place for every io.vanillabp coordinate of the Version 2 platform: the SPI an
            extension implements, the core runtime it reads its configuration from, the platform
            integrations the per-platform modules register with, and the test harness. The
-           adapter SPI is in it as well: this extension reads what an adapter declared - the
-           name-clash avoidance of a workflow module and the registry naming the workflow
-           aggregate's id variable - although it implements nothing of it. -->
+           adapter SPI is in it as well, for the tests, which play the core or an adapter. -->
       <dependency>
         <groupId>io.vanillabp</groupId>
         <artifactId>vanillabp-bom</artifactId>
@@ -555,9 +553,7 @@
           brings the adapter SPI and its platform integration along on purpose. Banning them
           transitively would ban the adapter this extension plugs into. The Spring Boot module
           calls AdapterBeanRegistrarSupport of the Spring Boot integration, which the platform
-          allows, and takes it through that adapter too.
-          The core module still declares the adapter SPI, and its POM says why. See
-          DECISIONS.pending/2191.md. -->
+          allows, and takes it through that adapter too. See DECISIONS.pending/2191.md. -->
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
         <version>3.5.0</version>

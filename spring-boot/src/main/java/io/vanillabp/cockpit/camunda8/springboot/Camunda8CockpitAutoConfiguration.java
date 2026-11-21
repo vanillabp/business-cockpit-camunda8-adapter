@@ -20,10 +20,10 @@ import io.vanillabp.cockpit.camunda8.Camunda8CockpitWorkers;
 import io.vanillabp.cockpit.camunda8.Camunda8SuspensionCheck;
 import io.vanillabp.cockpit.camunda8.Camunda8SuspensionCheckInterval;
 import io.vanillabp.cockpit.extension.spi.BusinessCockpitEventPublisher;
-import io.vanillabp.integration.adapter.spi.workflowtask.WorkflowTaskWiring;
 import io.vanillabp.integration.extension.spi.ExtensionWiringService;
 import io.vanillabp.integration.extension.spi.settings.VanillaBpSettings;
 import io.vanillabp.integration.spi.IdentifierScoping;
+import io.vanillabp.integration.spi.workflowtask.WorkflowTaskClaims;
 
 /**
  * Registers the Camunda 8 half of the Business Cockpit extension on Spring Boot.
@@ -149,7 +149,7 @@ public class Camunda8CockpitAutoConfiguration {
    * @param clients The clusters
    * @param deployments Where the listeners are remembered
    * @param workers The workers serving them
-   * @param workflowTaskWiring VanillaBP's registry, which names the workflow aggregate's id
+   * @param workflowTaskClaims VanillaBP's registry, which names the workflow aggregate's id
    *          variable of a BPMN process
    * @param publisher The extension, which is told the user tasks of every wired model. It is
    *          resolved when the first model is wired
@@ -162,12 +162,12 @@ public class Camunda8CockpitAutoConfiguration {
       final Camunda8Clients clients,
       final Camunda8CockpitDeployments deployments,
       final Camunda8CockpitWorkers workers,
-      final WorkflowTaskWiring workflowTaskWiring,
+      final WorkflowTaskClaims workflowTaskClaims,
       final ObjectProvider<BusinessCockpitEventPublisher> publisher,
       final Camunda8SuspensionCheck suspensionCheck) {
 
     return new Camunda8CockpitWiring(
-        clients, deployments, workers, workflowTaskWiring, publisher::getObject, suspensionCheck);
+        clients, deployments, workers, workflowTaskClaims, publisher::getObject, suspensionCheck);
 
   }
 

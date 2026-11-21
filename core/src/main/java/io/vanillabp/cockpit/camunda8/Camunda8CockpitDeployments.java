@@ -10,7 +10,7 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 import io.vanillabp.camunda8.wiring.Camunda8MultiInstance;
-import io.vanillabp.integration.adapter.spi.workflowtask.WorkflowTaskWiring;
+import io.vanillabp.integration.spi.workflowtask.WorkflowTaskClaims;
 
 /**
  * What this extension put into the models of a workflow module, remembered until the workers
@@ -124,12 +124,7 @@ public class Camunda8CockpitDeployments {
 
   private final Map<Deployment, Camunda8MultiInstance.Registry> multiInstancesByDeployment = new ConcurrentHashMap<>();
 
-  /**
-   * This is one of the two places where the extension still names a type of the adapter SPI. The
-   * narrow <code>WorkflowTaskClaims</code> of the integration SPI does not offer
-   * <code>workflowsShareTheWorkflowAggregate</code> yet. Once it does, this takes that type.
-   */
-  private final Map<Deployment, WorkflowTaskWiring> coresByDeployment = new ConcurrentHashMap<>();
+  private final Map<Deployment, WorkflowTaskClaims> coresByDeployment = new ConcurrentHashMap<>();
 
   /**
    * Notes one listener this extension added.
@@ -326,7 +321,7 @@ public class Camunda8CockpitDeployments {
   public void rememberTheCore(
       final String adapterId,
       final String workflowModuleId,
-      final WorkflowTaskWiring core) {
+      final WorkflowTaskClaims core) {
 
     coresByDeployment.put(new Deployment(adapterId, workflowModuleId), core);
 
@@ -334,7 +329,7 @@ public class Camunda8CockpitDeployments {
 
   /**
    * Whether two processes of one workflow module work on the same workflow aggregate. The core
-   * answers it (<code>WorkflowTaskWiring#workflowsShareTheWorkflowAggregate</code>), and nothing
+   * answers it (<code>WorkflowTaskClaims#workflowsShareTheWorkflowAggregate</code>), and nothing
    * is decided here. See decision 3 in the repository's DECISIONS.md.
    *
    * @param adapterId The configured adapter id
