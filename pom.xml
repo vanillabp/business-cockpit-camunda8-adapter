@@ -553,7 +553,8 @@
           brings the adapter SPI and its platform integration along on purpose. Banning them
           transitively would ban the adapter this extension plugs into. The Spring Boot module
           calls AdapterBeanRegistrarSupport of the Spring Boot integration, which the platform
-          allows, and takes it through that adapter too. See DECISIONS.pending/2191.md. -->
+          allows, and takes it through that adapter too. See decision 40 in the repository's
+          DECISIONS.md. -->
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
         <version>3.7.0</version>

@@ -1555,3 +1555,48 @@ both write them. One instance stood at the user task of version 1.
 
 **Where it is referenced.** `GAPS.md`, gap 7, and the wiki, `Home.md` section "A workflow moved off
 a user task a job worker serves".
+
+## 40. The extension depends on the extension SPI and no longer on the adapter SPI
+
+`adapter-platform-integration` and `business-cockpit` made the same change on their side, see
+decision 120 in the DECISIONS.md of `business-cockpit`. `Camunda8Scoping.tenantIdFor` of the
+Camunda 8 adapter takes an `IdentifierScoping` for it. No entry of this log is superseded. The
+entries which name `WorkflowTaskWiring` stay true: the bean is the same, and the extension now reads
+it through `WorkflowTaskClaims`, which `WorkflowTaskWiring` extends.
+
+The extension used to read three types from the core of VanillaBP and the adapter SPI:
+`MigrationAdapterProperties` for the configured adapter ids and the root prefix,
+`NameClashAvoidanceSupport` for how a cluster spells an id and which tenant a module lives in, and
+`WorkflowTaskWiring` for what the application declared. None of them was a promise to an
+extension.
+
+The platform now offers what an extension needs in its SPI artifacts, and the extension uses that:
+
+- `VanillaBpSettings` of the extension SPI answers `adapterIdsOfType` and `PREFIX`. Both platform
+  modules take it, and the Spring Boot auto-configuration waits for a bean of that type.
+- `IdentifierScoping` of the integration SPI answers the static `scopedProcessId` and
+  `plainTaskDefinition`, and `isolatesByAdapter`. `Camunda8Scope` and `Camunda8Clients` take it.
+  The tenant comes from `Camunda8Scoping.tenantIdFor` of the Camunda 8 adapter, which takes an
+  `IdentifierScoping` now and asks `isolatesByAdapter`.
+- `WorkflowTaskClaims` of the integration SPI answers `isClaimedByAWorkflowService`,
+  `resolveWorkflowAggregateIdName` and `workflowsShareTheWorkflowAggregate`.
+  `Camunda8CockpitWiring`, `Camunda8CockpitDeployments` and `Camunda8CockpitBridge` take it, and
+  the platform modules hand it over.
+
+The POMs follow. No module declares `migration-adapter`, the adapter SPI or a platform integration.
+The adapter SPI still arrives through the Camunda 8 adapter. The Spring Boot module calls
+`AdapterBeanRegistrarSupport#forEachConfiguredAdapterId` of the Spring Boot integration, which the
+platform allows. It never declared that artifact, and it still takes it through the Camunda 8
+adapter.
+
+An enforcer rule `an-extension-depends-on-the-extension-spi-alone` in the root `pom.xml` bans
+`migration-adapter`, `vanillabp-adapter-spi`, `vanillabp-spring-boot-integration` and
+`vanillabp-quarkus-integration` in the scopes `compile`, `provided` and `runtime`. It is the rule of
+`extensions-commons`, with one difference: it checks only what a module declares
+(`searchTransitive=false`). The Camunda 8 adapter is a BPMS adapter. Its core module depends on the
+adapter SPI, and its platform modules depend on the platform integrations, on purpose. A transitive
+ban would ban the adapter this extension plugs into, and excluding those artifacts would break the
+adapter at runtime. No module takes an artifact out of the ban.
+
+Referred to by: the root `pom.xml` (the enforcer rule), `AGENTS.md` (section "This is an extension,
+not a BPMS adapter").
