@@ -167,6 +167,8 @@ jobs:
           restore-keys: |
             maven-lines-${{ hashFiles('**/pom.xml') }}-
             maven-lines-
+      # the cache above can hold old snapshots of our own, so they go and Maven fetches the newest
+      - uses: ./.github/actions/forget-cached-snapshots
       - name: "Build and test line ${{ matrix.line }}"
         # The long step of this workflow: the integration tests start a cluster. The
         # worst run on record took 42 minutes. That one was a failing 8.10 line whose
@@ -179,7 +181,7 @@ jobs:
         # so the build proves the coordinates as well as the code. The adapter version is
         # the one the line profile names. 'install' without 'verify': install runs every
         # phase verify has, and naming both compiled each module twice for nothing.
-        run: mvn -s .github/maven/settings.xml ${VBP_SNAPSHOTS_PROFILE} --batch-mode --no-transfer-progress --update-snapshots
+        run: mvn -s .github/maven/settings.xml ${VBP_SNAPSHOTS_PROFILE} --batch-mode --no-transfer-progress
           -Pline-${{ matrix.line }} -Drevision=0.9.0-${{ matrix.line }}-SNAPSHOT
           clean install
       # A nightly line going red otherwise leaves nothing behind, so whoever reads the

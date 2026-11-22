@@ -48,8 +48,8 @@ jobs:
   # The gate is the nightly matrix itself, called here, and not a look at what the matrix
   # said last night. Reading last night's result would be cheaper, and it would prove less
   # than it looks. This repository compiles against SNAPSHOTs of the VanillaBP Camunda 8
-  # adapter and of the cockpit's extensions-commons, and every build resolves them with
-  # --update-snapshots at the moment it runs. So a green run of last night says that the
+  # adapter and of the cockpit's extensions-commons, and every build fetches the newest of
+  # them at the moment it runs. So a green run of last night says that the
   # code of that commit worked with the artifacts of that night, and the release publishes
   # today's. The commit is the smaller half of the question. Running the matrix inside the
   # release builds the commit which is released against the artifacts it is released
@@ -167,6 +167,8 @@ jobs:
           server-password-env-var: MAVEN_PASSWORD
           gpg-private-key: "${{ secrets.MAVEN_GPG_PRIVATE_KEY }}"
           gpg-passphrase-env-var: MAVEN_GPG_PASSPHRASE
+      # the cache above can hold old snapshots of our own, so they go and Maven fetches the newest
+      - uses: ./.github/actions/forget-cached-snapshots
       # A release train builds the bundle of each release and keeps it as an Actions artifact.
       # release-train.yaml in maven-release-parent uploads the bundles of all repositories of
       # a train as one deployment, because Sonatype allows only a few deployments a month.

@@ -81,13 +81,15 @@ jobs:
           java-version: 25.0.5+8
           distribution: temurin
           cache: maven
+      # the cache above can hold old snapshots of our own, so they go and Maven fetches the newest
+      - uses: ./.github/actions/forget-cached-snapshots
       - name: Build and test
         # The whole lifecycle up to 'install', tests included, and nothing is published.
         # The worst publish run on record, which ran the same tests, took 6.9 minutes and
         # the median 5.4, so 30 minutes is around four times the worst. A run which hangs
         # also blocks the next one, because this workflow allows one publish at a time.
         timeout-minutes: 30
-        run: mvn -s .github/maven/settings.xml ${VBP_SNAPSHOTS_PROFILE} --batch-mode --no-transfer-progress --update-snapshots install
+        run: mvn -s .github/maven/settings.xml ${VBP_SNAPSHOTS_PROFILE} --batch-mode --no-transfer-progress install
       # The reports are already there: the step above runs the whole lifecycle up to
       # 'install', and JaCoCo writes both of them in 'verify'. So this step only copies them
       # under the names they get on the web. A name is the last part of the address the
@@ -176,11 +178,13 @@ jobs:
           restore-keys: |
             maven-lines-${{ hashFiles('**/pom.xml') }}-
             maven-lines-
+      # the cache above can hold old snapshots of our own, so they go and Maven fetches the newest
+      - uses: ./.github/actions/forget-cached-snapshots
       - name: "Publish the snapshot of line ${{ matrix.line }}"
         # A compile and a deploy, no tests. 20 minutes is far more than that needs, and a
         # publish which hangs still ends before it blocks the next one for long.
         timeout-minutes: 20
-        run: mvn -s .github/maven/settings.xml ${VBP_SNAPSHOTS_PROFILE} --batch-mode --no-transfer-progress --update-snapshots
+        run: mvn -s .github/maven/settings.xml ${VBP_SNAPSHOTS_PROFILE} --batch-mode --no-transfer-progress
           -Pline-${{ matrix.line }},publish-snapshots -Drevision=0.9.0-${{ matrix.line }}-SNAPSHOT
           -Dmaven.test.skip=true -DskipITs
           clean deploy
