@@ -1327,21 +1327,24 @@ adapter's copy had a fallback for a step without Maven, the others had none.
 Built by story 988 on 2026-10-19. It replaces the part of decision 32 which says which adapter
 each path reads.
 
-A push to `main` publishes one snapshot per release line: `0.9.0-8.8-SNAPSHOT`,
-`0.9.0-8.9-SNAPSHOT` and `0.9.0-8.10-SNAPSHOT`. The lines are the `line-*` profiles of the parent
+A push to `main` publishes one snapshot per release line: `1.0.0-8.8-SNAPSHOT`,
+`1.0.0-8.9-SNAPSHOT` and `1.0.0-8.10-SNAPSHOT`. The lines are the `line-*` profiles of the parent
 POM, read the same way as in `line-matrix.yaml`. Line `<line>` reads the Camunda 8 adapter
 `2.0.0-<line>-SNAPSHOT`, because that adapter now publishes one snapshot per line as well.
-Nothing publishes a plain `0.9.0-SNAPSHOT` any more, and no line reads the old shared
+Nothing publishes a plain `1.0.0-SNAPSHOT` any more, and no line reads the old shared
 `2.0.0-SNAPSHOT` of the adapter.
 
 The reason: a project has to be able to try a snapshot of its own line before that line is
 released. Before this, only the current GA line had a snapshot, and every line of this repository
 read the same adapter snapshot, which was built for the GA line.
 
-The default `<revision>` is `0.9.0-8.10-SNAPSHOT`, the current GA line. So a plain `mvn install`
+The default `<revision>` is `1.0.0-8.10-SNAPSHOT`, the current GA line. So a plain `mvn install`
 builds the same coordinates the registry has. Another line names its version with `-Drevision`,
-like a release does. A default of `0.9.0-${camunda8.line}-SNAPSHOT` would follow the profile by
+like a release does. A default of `1.0.0-${camunda8.line}-SNAPSHOT` would follow the profile by
 itself, and Maven accepts it, but the Quarkus build stops on any placeholder inside `revision`.
+
+*Addendum 2026-11-25:* the versions above were `0.9.0-<line>-SNAPSHOT` until the cockpit moved to
+1.0.0. The scheme stays as it is.
 
 The jobs which publish skip the tests and run one after the other. The pull request and the
 nightly matrix test every line. The job `coverage` still tests the current GA line on the push,

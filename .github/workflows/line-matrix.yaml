@@ -184,7 +184,7 @@ jobs:
         # the one the line profile names. 'install' without 'verify': install runs every
         # phase verify has, and naming both compiled each module twice for nothing.
         run: mvn -s .github/maven/settings.xml ${VBP_SNAPSHOTS_PROFILE} --batch-mode --no-transfer-progress
-          -Pline-${{ matrix.line }} -Drevision=0.9.0-${{ matrix.line }}-SNAPSHOT
+          -Pline-${{ matrix.line }} -Drevision=1.0.0-${{ matrix.line }}-SNAPSHOT
           clean install
       # A nightly line going red otherwise leaves nothing behind, so whoever reads the
       # matrix in the morning sees which test failed and never why. The reports hold what
@@ -237,7 +237,7 @@ jobs:
           unzip -p "$(jar_of camunda8-adapter)" META-INF/vanillabp/adapter-camunda8.properties
           image="$(echo "$properties" | sed -n 's|^cluster\.image=||p')"
           mvn -s .github/maven/settings.xml ${VBP_SNAPSHOTS_PROFILE} --batch-mode --no-transfer-progress --quiet \
-            "-Pline-${LINE}" "-Drevision=0.9.0-${LINE}-SNAPSHOT" \
+            "-Pline-${LINE}" "-Drevision=1.0.0-${LINE}-SNAPSHOT" \
             -pl core dependency:list \
             -DincludeGroupIds=io.camunda -DincludeArtifactIds=camunda-client-java \
             -DoutputFile=target/camunda-client.txt
@@ -272,7 +272,7 @@ jobs:
           set -euo pipefail
           # '-Dverbose' prints the version each path asked for, which the plain tree drops
           mvn -s .github/maven/settings.xml ${VBP_SNAPSHOTS_PROFILE} --batch-mode --no-transfer-progress --quiet \
-            "-Pline-${LINE}" "-Drevision=0.9.0-${LINE}-SNAPSHOT" \
+            "-Pline-${LINE}" "-Drevision=1.0.0-${LINE}-SNAPSHOT" \
             -pl core dependency:tree -Dverbose \
             -Dincludes=com.google.protobuf:protobuf-java \
             -DoutputFile=target/protobuf-tree.txt

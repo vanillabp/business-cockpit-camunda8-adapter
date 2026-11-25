@@ -3,7 +3,7 @@ name: Publish snapshots
 # shared snapshot coordinates, so what gets published has to be what main holds, not
 # whatever branch was pushed last.
 #
-# There is one snapshot per release line, 0.9.0-<line>-SNAPSHOT, so a project can try any
+# There is one snapshot per release line, 1.0.0-<line>-SNAPSHOT, so a project can try any
 # line before it is released. The job 'snapshot' publishes them. The job 'coverage' first
 # builds and tests the current GA line, because the coverage report on GitHub Pages comes
 # from its tests. See decision 35 in the repository's DECISIONS.md.
@@ -160,7 +160,7 @@ jobs:
             | jq -R -s -c 'split("\n")[:-1]')
           echo "lines=${list}" >> "$GITHUB_OUTPUT"
           echo "Publishing lines: ${list}"
-  # One snapshot per line, 0.9.0-<line>-SNAPSHOT, built against the Camunda 8 adapter of
+  # One snapshot per line, 1.0.0-<line>-SNAPSHOT, built against the Camunda 8 adapter of
   # that line. It skips the tests: the pull request ran every line through the matrix,
   # and the nightly matrix runs them again. What this job proves is that every line still
   # compiles against the adapter of its line.
@@ -213,7 +213,7 @@ jobs:
         # publish which hangs still ends before it blocks the next one for long.
         timeout-minutes: 20
         run: mvn -s .github/maven/settings.xml ${VBP_SNAPSHOTS_PROFILE} --batch-mode --no-transfer-progress
-          -Pline-${{ matrix.line }},publish-snapshots -Drevision=0.9.0-${{ matrix.line }}-SNAPSHOT
+          -Pline-${{ matrix.line }},publish-snapshots -Drevision=1.0.0-${{ matrix.line }}-SNAPSHOT
           -Dmaven.test.skip=true -DskipITs
           clean deploy
         env:

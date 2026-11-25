@@ -52,17 +52,17 @@
     <adapter-platform.version>2.0.0-SNAPSHOT</adapter-platform.version>
     <!-- the Business Cockpit itself: extensions-commons is the platform-neutral half of
          this extension and is consumed as a published artifact, never copied -->
-    <business-cockpit.version>0.9.0-SNAPSHOT</business-cockpit.version>
+    <business-cockpit.version>1.0.0-SNAPSHOT</business-cockpit.version>
     <!-- The version of every artifact, resolved into the published POMs by the flatten
          plugin. It names the line, because every line publishes a snapshot of its own. A
-         plain 'mvn install' builds 0.9.0-8.10-SNAPSHOT of the current GA line, the same
+         plain 'mvn install' builds 1.0.0-8.10-SNAPSHOT of the current GA line, the same
          coordinates the registry has. Another line names its version as well, e.g.
-         '-Pline-8.8 -Drevision=0.9.0-8.8-SNAPSHOT', and so does a release, e.g.
-         '-Pline-8.8 -Drevision=0.9.0-8.8'. See README.md, section "Release lines".
-         The value cannot be '0.9.0-${camunda8.line}-SNAPSHOT': Maven accepts it, but the
+         '-Pline-8.8 -Drevision=1.0.0-8.8-SNAPSHOT', and so does a release, e.g.
+         '-Pline-8.8 -Drevision=1.0.0-8.8'. See README.md, section "Release lines".
+         The value cannot be '1.0.0-${camunda8.line}-SNAPSHOT': Maven accepts it, but the
          Quarkus build stops on any placeholder inside 'revision'. See decision 35 in the
          repository's DECISIONS.md. -->
-    <revision>0.9.0-8.10-SNAPSHOT</revision>
+    <revision>1.0.0-8.10-SNAPSHOT</revision>
     <!-- The release line this build produces. It is the same line scheme the VanillaBP
          Camunda 8 adapter uses, and it has to be, because this extension compiles against
          that adapter's core and against the Camunda client that adapter brings: the client a
